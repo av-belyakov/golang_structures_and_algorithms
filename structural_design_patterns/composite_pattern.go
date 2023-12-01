@@ -1,7 +1,5 @@
 package structuraldesignpatterns
 
-import "fmt"
-
 //	Шаблон "Составной" (Composite)
 //
 //Составной объект - это группа похожих объектов в одном объекте. Объекты хранятся в виде ДЕРЕВА
@@ -14,7 +12,7 @@ import "fmt"
 
 // IComposite interface
 type IComposite interface {
-	perform()
+	getName() string
 }
 
 // Leaflet struct (лист ветви)
@@ -24,8 +22,8 @@ type Leaflet struct {
 }
 
 // Leaflet class method perform
-func (leaf *Leaflet) perform() {
-	fmt.Println("Leaflet " + leaf.name)
+func (leaf *Leaflet) getName() string {
+	return "Leaflet " + leaf.name
 }
 
 // Branch struct (ветвь)
@@ -39,18 +37,27 @@ type Branch struct {
 }
 
 // Branch class method perform
-func (branch *Branch) perform() {
-	fmt.Println("Branch: " + branch.name)
+func (branch *Branch) getName() string {
+	return "Branch: " + branch.name
+}
+
+func (branch *Branch) perform() []string {
+	result := []string{}
+	result = append(result, branch.getName())
+
 	for _, leaf := range branch.leafs {
-		leaf.perform()
+		result = append(result, leaf.getName())
 	}
+
 	for _, branch := range branch.branches {
-		branch.perform()
+		result = append(result, branch.perform()...)
 	}
+
+	return result
 }
 
 // Branch class method add leaflet
-func (branch *Branch) add(leaf Leaflet) {
+func (branch *Branch) addLeaf(leaf Leaflet) {
 	branch.leafs = append(branch.leafs, leaf)
 }
 
@@ -59,19 +66,14 @@ func (branch *Branch) addBranch(newBranch Branch) {
 	branch.branches = append(branch.branches, newBranch)
 }
 
-// Branch class method getLeaflets
-func (branch *Branch) getLeaflets() []Leaflet {
-	return branch.leafs
-}
-
 // CompositeExample method
 func CompositeExample() {
 	var branch = &Branch{name: "branch 1"}
 	var leaf1 = Leaflet{name: "leaf 1"}
 	var leaf2 = Leaflet{name: "leaf 2"}
 	var branch2 = Branch{name: "branch 2"}
-	branch.add(leaf1)
-	branch.add(leaf2)
+	branch.addLeaf(leaf1)
+	branch.addLeaf(leaf2)
 	branch.addBranch(branch2)
 	branch.perform()
 }

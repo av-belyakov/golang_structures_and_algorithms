@@ -1,6 +1,9 @@
 package structuraldesignpatterns
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Шаблон "Мост" (Bridge)
 //
@@ -15,51 +18,57 @@ import "fmt"
 //Привязка приложения к среде выполнения, отображение ортогональных иерархий классов и
 //реализация независимости от платформы - вот сценарии, в которых может быть применен шаблон моста.
 
-// IDrawShape interface
-type IDrawShape interface {
-	drawShape(x [5]float32, y [5]float32)
+type IConverterDate interface {
+	ConverterDate(strTime string) (time.Time, error)
 }
 
-// DrawShape struct
-type DrawShape struct{}
+type ConvertDate struct{}
 
-// Метод DrawShape рисует фигуру с заданными координатами
-func (drawShape DrawShape) drawShape(x [5]float32, y [5]float32) {
-	fmt.Println("Drawing Shape")
+func (cd ConvertDate) ConverterDate(strTime string) (time.Time, error) {
+	return time.Parse(time.RFC3339, strTime)
 }
 
-// IContour interface
-type IContour interface {
-	drawContour(x [5]float32, y [5]float32)
-	resizeByFactor(factor int)
+type IShowerData interface {
+	ConverterDate(strTime string) (time.Time, error)
+	GetData() (int, time.Month, int)
+	GetTime() (int, int, int)
+	SetData(time.Time)
 }
 
-// DrawContour struct
-type DrawContour struct {
-	x      [5]float32
-	y      [5]float32
-	shape  DrawShape
-	factor int
+type ShowData struct {
+	CurrentTime time.Time
+	Convert     ConvertDate
 }
 
-// DrawContour метод drawContour возвращает координаты
-func (contour DrawContour) drawContour(x [5]float32, y [5]float32) {
-	fmt.Println("Drawing Contour")
-	contour.shape.drawShape(contour.x, contour.y)
+func (sd ShowData) ConverterDate(strTime string) (time.Time, error) {
+	return sd.Convert.ConverterDate(strTime)
 }
 
-// DrawContour метод resizeByFactor возвращает множитель factor
-func (contour DrawContour) resizeByFactor(factor int) {
-	contour.factor = factor
+func (sd *ShowData) SetData(t time.Time) {
+	sd.CurrentTime = t
+}
+
+func (sd ShowData) GetData() (int, time.Month, int) {
+	return sd.CurrentTime.Date()
+}
+
+func (sd ShowData) GetTime() (int, int, int) {
+	hour := sd.CurrentTime.Hour()
+	minute := sd.CurrentTime.Minute()
+	second := sd.CurrentTime.Second()
+
+	return hour, minute, second
 }
 
 // BridgeExample method
 func BridgeExample() {
-	var x = [5]float32{1, 2, 3, 4, 5}
-	var y = [5]float32{1, 2, 3, 4, 5}
-	var contour IContour = DrawContour{x, y, DrawShape{}, 2}
-	contour.drawContour(x, y)
-	contour.resizeByFactor(2)
+	var showData IShowerData = &ShowData{Convert: ConvertDate{}}
+	t, _ := showData.ConverterDate("2023-01-02T15:04:05+07:00")
+	showData.SetData(t)
+	year, month, day := showData.GetData()
+	h, m, s := showData.GetTime()
+	fmt.Printf("Data: %d %s %d", year, month.String(), day)
+	fmt.Printf("Time: %d:%d:%d", h, m, s)
 }
 
 //Интерфейс IContour позволяет использовать метод drawContour пользовательского

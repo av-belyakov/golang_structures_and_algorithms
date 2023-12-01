@@ -1,6 +1,9 @@
 package structuraldesignpatterns
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 //	Шаблон "Декоратор" (Decorator)
 //
@@ -21,8 +24,10 @@ type IDProcess interface {
 type ProcessClass struct{}
 
 // ProcessClass method process
-func (process *ProcessClass) process() {
+func (process *ProcessClass) process(str string, repeat int) string {
 	fmt.Println("ProcessClass process")
+
+	return strings.Repeat(str, repeat)
 }
 
 // ProcessDecorator struct
@@ -31,20 +36,23 @@ type ProcessDecorator struct {
 }
 
 // ProcessDecorator class method process
-func (decorator *ProcessDecorator) process() {
+func (decorator *ProcessDecorator) process(str string, repeat int) string {
 	if decorator.processInstance == nil {
 		fmt.Println("ProcessDecorator process")
-	} else {
-		fmt.Printf("ProcessDecorator process and ")
-		decorator.processInstance.process()
+
+		return str
 	}
+
+	fmt.Printf("ProcessDecorator process and ")
+
+	return decorator.processInstance.process(str, repeat)
 }
 
 // DecoratorExample method
 func DecoratorExample() {
 	var process = &ProcessClass{}
 	var decorator = &ProcessDecorator{}
-	decorator.process()
+	decorator.process("hotdog", 3)
 	decorator.processInstance = process
-	decorator.process()
+	decorator.process("hotdog", 5)
 }
