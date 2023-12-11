@@ -7,7 +7,9 @@ import (
 )
 
 func TestAdapterExample(t *testing.T) {
-	assert.Equal(t, "10", AdapterExample(10))
+	var processor IAProcess = Adapter{adaptee: Adaptee{10}}
+
+	assert.Equal(t, "10", processor.process())
 
 	//для проверки на ошибку
 	//assert.Nil(t, err)

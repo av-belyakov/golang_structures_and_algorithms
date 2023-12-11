@@ -18,6 +18,11 @@ import "fmt"
 //для каждого значения. В сценарии параллельного потока создается несколько экземпляров. Это
 //основано на критерии равенства объектов с минимальным весом.
 
+// DataTransferObject interface
+type DataTransferObject interface {
+	getId() string
+}
+
 type DataTransferObjectFactory struct {
 	pool map[string]DataTransferObject
 }
@@ -40,11 +45,6 @@ func (factory DataTransferObjectFactory) getDataTransferObject(dtoType string) D
 		dto = factory.pool[dtoType]
 	}
 	return dto
-}
-
-// DataTransferObject interface
-type DataTransferObject interface {
-	getId() string
 }
 
 // Customer struct
