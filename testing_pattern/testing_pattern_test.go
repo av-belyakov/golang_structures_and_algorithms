@@ -37,20 +37,20 @@ func TestRemoveNewLineSuffix(t *testing.T) {
 			expected: "",
 		},
 		`ending with \r\n`: {
-			input:    "a\r\n",
-			expected: "a",
+			input:    "abcdef\r\n",
+			expected: "abcdef",
 		},
 		`ending with \n`: {
-			input:    "a\n",
-			expected: "a",
+			input:    "abcdef\n",
+			expected: "abcdef",
 		},
 		`ending with multiple \n`: {
-			input:    "a\n\n\n",
-			expected: "a",
+			input:    "abcdef\n\n\n",
+			expected: "abcdef",
 		},
 		`ending without newline`: {
-			input:    "a",
-			expected: "a",
+			input:    "abcdef",
+			expected: "abcdef",
 		},
 	}
 
