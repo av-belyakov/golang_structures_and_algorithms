@@ -16,7 +16,7 @@ func TestStringsConcat(t *testing.T) {
 		strTest1 += v
 	}
 
-	strTest2 := StringsConcat(testList)
+	strTest2 := StringsConcatBuilder(testList)
 
 	assert.Equal(t, len(strTest1), len(strTest2))
 }
@@ -37,11 +37,11 @@ func BenchmarkSimpleStringsConcat(b *testing.B) {
 	})
 
 	b.Run("Concat with strings.Builder{}", func(b *testing.B) {
-		_ = StringsConcat(listTest)
+		_ = StringsConcatBuilder(listTest)
 	})
 
 	b.Run("Concat with strings.Builder{} and Grow() method", func(b *testing.B) {
-		_ = StringsConcatGrow(listTest)
+		_ = StringsConcatBuilderGrow(listTest)
 	})
 }
 

@@ -21,22 +21,18 @@ import (
 //Монотонные часы не сохраняются например при преобразовании к формату JSON
 
 func TestEqualTime(t *testing.T) {
-	type Event struct {
-		time.Time
-	}
-
 	var (
-		event1 Event
-		event2 Event
+		event1 TimeEvent
+		event2 TimeEvent
 	)
 
 	timeNow := time.Now()
 
-	event1 = Event{Time: timeNow}
+	event1 = TimeEvent{Time: timeNow}
 	b, err := json.Marshal(event1)
 	assert.NoError(t, err)
 
-	event2 = Event{}
+	event2 = TimeEvent{}
 	err = json.Unmarshal(b, &event2)
 	assert.NoError(t, err)
 
@@ -51,15 +47,16 @@ func TestEqualTime(t *testing.T) {
 
 	//этого можно избежать двумя способами, первый это использовать для сравнения
 	//специальный метод time.Time.Equal
-	isEqual := event1.Time.Equal(event2.Time)
+	isEqual := event1.IsEqual(event2.Time)
 	assert.True(t, isEqual)
 
 	//второй вариант, при формировании пользовательского типа использовать time.Time.Truncate
-	event1 = Event{Time: timeNow.Truncate(0)}
+	//event1 = TimeEvent{Time: timeNow.Truncate(0)}
+	event1 = NewTimeWithTruncate(timeNow)
 	b, err = json.Marshal(event1)
 	assert.NoError(t, err)
 
-	event2 = Event{}
+	event2 = TimeEvent{}
 	err = json.Unmarshal(b, &event2)
 	assert.NoError(t, err)
 

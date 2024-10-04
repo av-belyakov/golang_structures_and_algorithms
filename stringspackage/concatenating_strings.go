@@ -1,3 +1,4 @@
+// Примеры работы со строками
 package stringspackage
 
 import "strings"
@@ -11,7 +12,8 @@ import "strings"
 //производительность этой функции. Для решения этой проблеммы необходимо использовать
 //структуру Builder{} из пакета strings.
 
-func StringsConcat(values []string) string {
+// StringsConcatBuilder функция добавляет строки друг к другу через промежуточный буфер
+func StringsConcatBuilder(values []string) string {
 	sb := strings.Builder{}
 	for _, value := range values {
 		_, _ = sb.WriteString(value)
@@ -44,7 +46,8 @@ func StringsConcat(values []string) string {
 //а количество байт, поэтому мы используем функцию len. Затем мы вызываем Grow, чтобы гарантировать
 //пространство для общего количества байт, прежде чем выполнять итерацию по строкам.
 
-func StringsConcatGrow(values []string) string {
+// StringsConcatBuilderGrow функция добавляет строки друг к другу через промежуточный буфер заданного размера
+func StringsConcatBuilderGrow(values []string) string {
 	total := 0
 	for i := 0; i < len(values); i++ {
 		total += len(values[i])
