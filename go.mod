@@ -1,10 +1,10 @@
-module golang_structures_and_algorithms
+module github.com/av-belyakov/golang_structures_and_algorithms
 
-go 1.21.4
+go 1.23
 
 require (
-	github.com/stretchr/testify v1.8.4
-	golang.org/x/sync v0.6.0
+	github.com/stretchr/testify v1.9.0
+	golang.org/x/sync v0.8.0
 )
 
 require (

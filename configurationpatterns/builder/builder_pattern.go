@@ -1,14 +1,14 @@
+// Установка конфигурационных опций на основе шаблона "Строитель" (Builder pattern)
 package configurationpatterns
 
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/http"
+
+	"github.com/av-belyakov/golang_structures_and_algorithms/commonfunctions"
 )
 
-//Установка конфигурационных опций на основе шаблона "Строитель" (Builder pattern)
-//
 //Так как при использовании структуры не указанные поля инициализируются со значением "по
 //умолчанию", то необходимо отличать установленное пользователем значение, например сетевого порта
 //установленного в "0" от значения инициализированного в структуре "по умолчанию". Для этого
@@ -24,21 +24,22 @@ type ConfigBuilder struct {
 	port *int
 }
 
-// метод позволяющий задать конфигурацию порта
+// Port метод позволяющий задать конфигурацию порта
 func (b *ConfigBuilder) Port(
 	port int) *ConfigBuilder {
 	b.port = &port
 	return b
 }
 
+// Build метод строящий конфигурацию
 func (b *ConfigBuilder) Build() (Config, error) {
 	cfg := Config{}
 
 	if b.port == nil {
-		cfg.Port = defaultHTTPPort()
+		cfg.Port = commonfunctions.DefaultHTTPPort()
 	} else {
 		if *b.port == 0 {
-			cfg.Port = randomPort()
+			cfg.Port = commonfunctions.RandomPort()
 		} else if *b.port < 0 {
 			return Config{}, errors.New("port should be positive")
 		} else {
@@ -61,20 +62,10 @@ func (b *ConfigBuilder) Build() (Config, error) {
 //исключения, методы конструктора, такие как Port, могут вызывать исключения, если ввод неверен. Если мы хотим сохранить
 //возможность цепочки вызовов, функция не может возвращать ошибку.
 
-// ********************
-// Пример использования
-// ********************
+// NewServerBuildPattern функция генерирующая новый сервер
 func NewServerBuildPattern(addr string, config Config) (*http.Server, error) {
 
 	// ...
 
 	return &http.Server{Addr: fmt.Sprintf("%s:%d", addr, config.Port)}, nil
-}
-
-func randomPort() int {
-	return rand.Intn(65535)
-}
-
-func defaultHTTPPort() int {
-	return 80
 }

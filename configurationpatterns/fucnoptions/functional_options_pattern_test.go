@@ -1,4 +1,4 @@
-package configurationpatterns
+package fucnoptions
 
 import (
 	"testing"

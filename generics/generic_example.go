@@ -1,6 +1,7 @@
+// Примеры написания дженериков Generic
 package generics
 
-// функция для приска любого сравнимого значения в в срезе
+// SearchInSlice функция для приска любого сравнимого значения в в срезе
 func SearchInSlice[T comparable](elem T, l []T) (T, bool) {
 	var result T
 
@@ -15,7 +16,7 @@ func SearchInSlice[T comparable](elem T, l []T) (T, bool) {
 	return result, false
 }
 
-// функция выполняющая сбор всех ключей в срез
+// GetKeysFromMap функция выполняющая сбор всех ключей в срез
 func GetKeysFromMap[T comparable, V any](list map[T]V) []T {
 	result := make([]T, 0, len(list))
 
@@ -26,10 +27,12 @@ func GetKeysFromMap[T comparable, V any](list map[T]V) []T {
 	return result
 }
 
+// MyNumberType общий вспомогательный тип содержащий только целые числовые значения
 type MyNumberType interface {
 	int | int8 | int16 | int32 | int64 | uint8 | uint16 | uint32 | uint64
 }
 
+// MySummation функция выполняющая сложение любых целых, числовых типов
 func MySummation[T MyNumberType](numbers []T) T {
 	var result T
 
