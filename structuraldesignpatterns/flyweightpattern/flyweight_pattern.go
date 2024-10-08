@@ -1,4 +1,4 @@
-// Шаблон Легчайший (Flyweight)
+// - шаблон Легчайший (Flyweight)
 package structuraldesignpatterns
 
 import "fmt"

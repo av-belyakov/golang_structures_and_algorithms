@@ -1,4 +1,4 @@
-// Шаблон "Мост" (Bridge)
+// - шаблон "Мост" (Bridge)
 package structuraldesignpatterns
 
 import (

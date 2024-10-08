@@ -1,4 +1,4 @@
-// Установка конфигурационных опций на основе шаблона "Строитель" (Builder pattern)
+// - установка конфигурационных опций на основе шаблона "Строитель" (Builder pattern)
 package configurationpatterns
 
 import (

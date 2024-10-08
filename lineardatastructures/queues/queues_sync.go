@@ -1,4 +1,4 @@
-// Структуры данных типа "Очереди" (Queues) или типа "Синхронизированная очередь" (Synchronized queue)
+// - структуры данных типа "Очереди" (Queues) или типа "Синхронизированная очередь" (Synchronized queue)
 package lineardatastructures
 
 import (

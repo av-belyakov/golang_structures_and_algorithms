@@ -1,4 +1,4 @@
-// Линейная структура данных типа "Связанный список" (Linked List)
+// - линейная структура данных типа "Связанный список" (Linked List)
 package lineardatastructures
 
 import "fmt"

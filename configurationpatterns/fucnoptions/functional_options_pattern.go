@@ -1,4 +1,4 @@
-// Установка конфигурационных опций на основе "шаблона функциональных опций" (Functional options pattern)
+// - установка конфигурационных опций на основе "шаблона функциональных опций" (Functional options pattern)
 package fucnoptions
 
 import (

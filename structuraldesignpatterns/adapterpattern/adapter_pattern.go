@@ -1,4 +1,4 @@
-// Шаблон "Адаптер" (Adapter)
+// - шаблон "Адаптер" (Adapter)
 package structuraldesignpatterns
 
 import (

@@ -1,4 +1,4 @@
-// Линейная структура данных типа "Двойной связанный список" (Doubly Linked List)
+// - линейная структура данных типа "Двойной связанный список" (Doubly Linked List)
 package lineardatastructures
 
 import "fmt"

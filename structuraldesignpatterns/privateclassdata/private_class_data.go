@@ -1,4 +1,4 @@
-// Шаблон "Данные частного класса" (Private class data)
+// - шаблон "Данные частного класса" (Private class data)
 package structuraldesignpatterns
 
 import (

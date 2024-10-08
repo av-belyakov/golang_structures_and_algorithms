@@ -1,4 +1,4 @@
-// Шаблон "Декоратор" (Decorator)
+// - шаблон "Декоратор" (Decorator)
 package structuraldesignpatterns
 
 import (

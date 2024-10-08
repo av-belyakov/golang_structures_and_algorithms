@@ -1,4 +1,4 @@
-// Шаблон "Фасад" (Facade)
+// - шаблон "Фасад" (Facade)
 package structuraldesignpatterns
 
 import "fmt"

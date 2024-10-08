@@ -1,4 +1,4 @@
-// Шаблон Прокси (Proxy)
+// - шаблон Прокси (Proxy)
 package structuraldesignpatterns
 
 import "fmt"
