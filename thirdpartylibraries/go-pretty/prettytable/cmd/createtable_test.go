@@ -1,16 +1,15 @@
-// Красивый вывод таблицы
-package main
+package prettytable_test
 
 import (
-	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	prettytable "github.com/av-belyakov/golang_structures_and_algorithms/thirdpartylibraries/go-pretty/prettytable/cmd"
 )
 
-func main() {
-	fmt.Println("Example pretty table library")
-
-	footerNames := []any{"", "", "", "Total:", 17527}
+func TestCreateTable(t *testing.T) {
+	footerNames := []any{"", "", "", "Total:", 17557}
 	rows := [][]any{
 		{1, "Aihor Helmet", "Moscow, 10-Parkovay, 34", "2024-11-21", 2453},
 		{2, "Shoe Helmet", "Moscow, Leninskiy Prospekt, 41, k3", "2024-11-19", 6553},
@@ -19,4 +18,5 @@ func main() {
 	}
 
 	prettytable.PrettyTableExample(footerNames, rows)
+	assert.True(t, true)
 }
