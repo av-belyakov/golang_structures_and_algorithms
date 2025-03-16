@@ -47,7 +47,7 @@
 
 ##### timepackage Примеры работы с пакетом time
 
-##### workongwithfiles Примеры работы с файлами
+##### workingswithfiles Примеры работы с файлами
 
 - checkfileexist - проверка существования файлов
 - checkrwpermissions - проверка прав доступа файла на запись и чтение
@@ -65,3 +65,8 @@
 ##### traversingdirectories Примеры обхода директорий
 
 ##### filemonitoring Мониторинг файлов
+
+##### mechanicspipes Механизмы конвейеров
+
+- anonymouspipes - анонимные конвееры
+- navigatingnamedpipes - навигация по именованным каналам
