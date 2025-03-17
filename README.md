@@ -70,3 +70,5 @@
 
 - anonymouspipes - анонимные конвееры
 - navigatingnamedpipes - навигация по именованным каналам
+
+##### unixsocket Unix сокеты
