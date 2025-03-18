@@ -40,6 +40,7 @@
 - flyweightpattern - шаблон Легчайший (Flyweight)
 - privateclassdata - шаблон "Данные частного класса" (Private class data)
 - proxypattern - шаблон Прокси (Proxy)
+- singletonpattern - шаблон Одиночка (Singleton)
 
 ##### syncpackage Некоторые примеры работы с пакетом sync
 
