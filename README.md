@@ -73,3 +73,5 @@
 - navigatingnamedpipes - навигация по именованным каналам
 
 ##### unixsocket Unix сокеты
+
+##### errorspackage Некоторые примеры работ с ошибками
