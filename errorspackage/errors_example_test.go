@@ -6,8 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/av-belyakov/golang_structures_and_algorithms/errorspackage"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/av-belyakov/golang_structures_and_algorithms/errorspackage"
 )
 
 func TestErrorAs(t *testing.T) {
