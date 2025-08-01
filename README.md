@@ -75,3 +75,5 @@
 ##### unixsocket Unix сокеты
 
 ##### errorspackage Некоторые примеры работ с ошибками
+
+##### flagpackage Пример работы с пакетом flag
