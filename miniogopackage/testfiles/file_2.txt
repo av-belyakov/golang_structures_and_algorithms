@@ -1,0 +1,531 @@
+		__________________________ Task 1 ____________________________
+
+John and Mary want to travel between a few towns A, B, C ... Mary has on a sheet of paper a list of distances between these towns. ls = [50, 55, 57, 58, 60]. John is tired of driving and he says to Mary that he doesn't want to drive more than t = 174 miles and he will visit only 3 towns.
+Which distances, hence which towns, they will choose so that the sum of the distances is the biggest possible to please Mary and John?
+    Example:
+With list ls and 3 towns to visit they can make a choice between: [50,55,57],[50,55,58],[50,55,60],[50,57,58],[50,57,60],[50,58,60],[55,57,58],[55,57,60],[55,58,60],[57,58,60].
+The sums of distances are then: 162, 163, 165, 165, 167, 168, 170, 172, 173, 175.
+The biggest possible sum taking a limit of 174 into account is then 173 and the distances of the 3 corresponding towns is [55, 58, 60].
+    
+		=== Solution:
+
+package kata
+
+// ChooseBestSum is a recursive function to find the kvvalues in ls that
+// sum to the greatest number <= t. returns -1 if not possible.
+func ChooseBestSum(t, k int, ls []int) int {
+  outerbest := -1
+  for i, d := range ls {
+    // not enough remaining values for this d to work
+    if len(ls) < k {
+      continue
+    }
+    // recursively choose best from t-d, until final level k=1
+    if k > 1 {
+      innerbest := ChooseBestSum(t-d, k-1, ls[i+1:])
+      // if no best available at lower level, this d cant work
+      if innerbest < 0 {
+        continue
+      }
+      d += innerbest
+    }
+    if d <= t && d > outerbest {
+      outerbest = d
+    }
+  }
+  return outerbest
+}
+
+		__________________________ Task 2 ____________________________
+
+Нужно посчитать количестов хостов между двумя ip адресами. Например 10.0.0.45 и 10.0.1.12
+
+		=== Solution:
+
+package kata
+
+import (
+  "strconv"
+  "strings"
+)
+
+fun clips Between(start, end string) int {
+  cycle := func(str string) int {
+    var tmp int
+  
+    for _, value := range strings.Split(str, ".") {
+      v, _ := strconv.Atoi(value)
+      tmp = tmp * 256 + v
+    }
+    
+    return tmp
+  }
+
+  return cycle(end) - cycle(start)
+}
+
+		__________________________ Task 3 ____________________________
+
+Given two strings s1 and s2, we want to visualize how different the two strings are. We will only take into account the lowercase letters (a to z). First let us count the frequency of each lowercase letters in s1 and s2.
+
+s1 = "A aaaa bb c"
+s2 = "& aaa bbb c d"
+s1 has 4 'a', 2 'b', 1 'c'
+s2 has 3 'a', 3 'b', 1 'c', 1 'd'
+
+So the maximum for 'a' in s1 and s2 is 4 from s1; the maximum for 'b' is 3 from s2. In the following we will not consider letters when the maximum of their occurrences is less than or equal to 1.
+We can resume the differences between s1 and s2 in the following string: "1:aaaa/2:bbb" where 1 in 1:aaaa stands for string s1 and aaaa because the maximum for a is 4. In the same manner 2:bbb stands for string s2 and bbb because the maximum for b is 3.
+The task is to produce a string in which each lowercase letters of s1 or s2 appears as many times as its maximum if this maximum is strictly greater than 1; these letters will be prefixed by the number of the string where they appear with their maximum value and :. If the maximum is in s1 as well as in s2 the prefix is =:.
+In the result, substrings (a substring is for example 2:nnnnn or 1:hhh; it contains the prefix) will be in decreasing order of their length and when they have the same length sorted in ascending lexicographic order (letters and digits - more precisely sorted by codepoint); the different groups will be separated by '/'. See examples and "Example Tests".
+Hopefully other examples can make this clearer.
+
+s1 = "my&friend&Paul has heavy hats! &"
+s2 = "my friend John has many many friends &"
+mix(s1, s2) --> "2:nnnnn/1:aaaa/1:hhh/2:mmm/2:yyy/2:dd/2:ff/2:ii/2:rr/=:ee/=:ss"
+
+s1 = "mmmmm m nnnnn y&friend&Paul has heavy hats! &"
+s2 = "my frie n d Joh n has ma n y ma n y frie n ds n&"
+mix(s1, s2) --> "1:mmmmmm/=:nnnnnn/1:aaaa/1:hhh/2:yyy/2:dd/2:ff/2:ii/2:rr/=:ee/=:ss"
+
+s1="Are the kids at home? aaaaa fffff"
+s2="Yes they are here! aaaaa fffff"
+mix(s1, s2) --> "=:aaaaaa/2:eeeee/=:fffff/1:tt/2:rr/=:hh"
+
+		=== Solution:
+
+    МОЕ РЕШЕНИЕ    
+package kata
+
+import (
+  "fmt"
+  "sort"
+  "strconv"
+  "strings"
+)
+
+type myType []mt
+type mt struct {
+  numStr int
+  count int
+  name string
+}
+
+type lessFunc func(p1, p2 *mt) bool
+
+type multiSorter struct {
+    myType myType
+    less    []lessFunc
+}
+
+func (ms *multiSorter) Sort(myType myType) {
+    ms.myType = myType
+    sort.Sort(ms)
+}
+
+func OrderedBy(less ...lessFunc) *multiSorter {
+    return &multiSorter{
+	less: less,
+    }
+}
+
+func (ms *multiSorter) Len() int {
+    return len(ms.myType)
+}
+
+func (ms *multiSorter) Swap(i, j int) {
+    ms.myType[i], ms.myType[j] = ms.myType[j], ms.myType[i]
+}
+
+func (ms *multiSorter) Less(i, j int) bool {
+    p, q := &ms.myType[i], &ms.myType[j]
+
+    var k int
+    for k = 0; k < len(ms.less)-1; k++ {
+	less := ms.less[k]
+	switch {
+	case less(p, q):
+	    return true
+	case less(q, p):
+	    return false
+	}
+    }
+
+    return ms.less[k](p, q)
+}
+
+func Mix(s1, s2 string) string {  
+  
+  fmt.Printf("___ s1: %v, ___ s2: %v\n", s1, s2)
+  
+  searchOverlap := func(str string) map[string]int {
+    strOverlap := map[string]int{}
+  
+    for _, v := range str {
+      if v < 97 || v > 122 {
+        continue
+      }
+      
+      vs := strconv.QuoteRune(v)
+            
+      if _, ok := strOverlap[vs]; ok {
+        strOverlap[vs] += 1
+        
+        continue
+      }
+      
+      strOverlap[vs] = 1
+    }
+    
+    return strOverlap
+  }
+  
+  getMyType := func(listNum int, list map[string]int, tmpType map[string]struct{count1, count2 int}) map[string]struct{count1, count2 int} {
+    for k, v := range list {
+      if v <= 1 {
+        continue  
+      } 
+      
+      elem, ok := tmpType[k] 
+      if !ok {
+        tmpStruct := struct{count1, count2 int}{v, 0}
+        
+        if listNum == 2 {
+          tmpStruct = struct{count1, count2 int}{0, v}
+        }
+        
+        tmpType[k] = tmpStruct
+      }
+      
+      if listNum == 1 {
+        elem.count1 = v
+      } else {
+        elem.count2 = v
+      }
+      
+      tmpType[k] = elem
+    }
+    
+    return tmpType
+  }
+  
+  name := func(mt1, mt2 *mt) bool {
+	return mt1.name < mt2.name
+    }
+    numStr := func(mt1, mt2 *mt) bool {
+	return mt1.numStr < mt2.numStr
+    }
+    /*increasingCount := func(mt1, mt2 *mt) bool {
+	return mt1.count < mt2.count
+    }*/
+  decreasingCount := func(mt1, mt2 *mt) bool {
+	return mt1.count > mt2.count
+    }
+    
+  so1 := searchOverlap(s1)
+  so2 := searchOverlap(s2)
+  
+  fmt.Printf("BEFORE S1: %v\n", so1)
+  fmt.Printf("BEFORE S2: %v\n", so2)
+
+  listTmp := map[string]struct{count1, count2 int}{}
+  listTmp = getMyType(1, so1, listTmp)
+  listTmp = getMyType(2, so2, listTmp)
+  
+  fmt.Printf("___ listTmp: %v\n", listTmp)
+  
+  listResult := myType{}
+  
+  for k, v := range listTmp {
+    mt := mt{name: k}
+    
+    if v.count1 > v.count2 {
+      mt.numStr = 49
+      mt.count = v.count1
+    } else if v.count1 < v.count2 {
+      mt.numStr = 50
+      mt.count = v.count2
+    } else {
+      mt.numStr = 61
+      mt.count = v.count1
+    }
+    
+    listResult = append(listResult, mt)
+  }
+
+  fmt.Printf("=== BEFORE SORT listResult: %v\n", listResult)
+  
+  OrderedBy(decreasingCount, numStr, name).Sort(listResult)
+  
+  fmt.Printf("=== AFTE SORT listResult: %v\n", listResult)
+  
+  strResult := []string{}
+  for _, v := range listResult {
+    numStr := "=:"
+    
+    if v.numStr == 49 {
+      numStr = "1:"
+    }
+    
+    if v.numStr == 50 {
+      numStr = "2:"
+    }
+
+    strResult = append(strResult, fmt.Sprintf("%s:%v", v.numStr, strings.ReplaceAll(strings.Repeat(v.name, v.count), "'", "")))
+  }
+  
+  fmt.Printf("=== strResult: %v\n", strResult)
+  
+  return strings.Join(strResult, "/")
+}
+}
+
+    ДРУГОЕ РЕШЕНИЕ
+    
+package kata
+
+import (
+  "strings"
+  "sort"
+  
+)
+
+func Mix(s1, s2 string) string {
+    alphabase := "abcdefghijklmnopqrstuvwxyz"
+    result := []string{}
+    for _, c := range alphabase {
+      nb_s1 := strings.Count(s1, string(c))
+      nb_s2 := strings.Count(s2, string(c))
+      if nb_s1 > 1 || nb_s2 > 1 {
+          if nb_s1 == nb_s2 {
+               result = append(result, "=:" + strings.Repeat(string(c), nb_s1))
+          }
+          if nb_s1 > nb_s2 {
+               result = append(result, "1:" + strings.Repeat(string(c), nb_s1))
+          }
+          if nb_s1 < nb_s2 {
+               result = append(result, "2:" + strings.Repeat(string(c), nb_s2))
+          }
+      }
+    }
+    sort.Slice(result, func(i, j int) bool {
+        if len(result[i]) == len(result[j]) {
+            return result[i] < result[j]
+        }
+        return len(result[i]) > len(result[j])
+    })
+    return strings.Join(result, "/")
+}
+
+		__________________________ Task 4 ____________________________
+
+If we were to set up a Tic-Tac-Toe game, we would want to know whether the board's current state is solved, wouldn't we? Our goal is to create a function that will check that for us!
+Assume that the board comes in the form of a 3x3 array, where the value is 0 if a spot is empty, 1 if it is an "X", or 2 if it is an "O", like so:
+
+[[0, 0, 1],
+ [0, 1, 2],
+ [2, 1, 0]]
+We want our function to return:
+
+-1 if the board is not yet finished AND no one has won yet (there are empty spots),
+1 if "X" won,
+2 if "O" won,
+0 if it's a cat's game (i.e. a draw).
+
+		=== Solution:
+		
+package kata
+
+import (
+  "strconv"
+  "strings"
+)
+
+func IsSolved(board [3][3]int) int {  
+  listTmp := []string{
+    strings.Join([]string{ strconv.Itoa(board[0][0]), strconv.Itoa(board[0][1]), strconv.Itoa(board[0][2]), }, ""),
+    strings.Join([]string{ strconv.Itoa(board[1][0]), strconv.Itoa(board[1][1]), strconv.Itoa(board[1][2]), }, ""),
+    strings.Join([]string{ strconv.Itoa(board[2][0]), strconv.Itoa(board[2][1]), strconv.Itoa(board[2][2]), }, ""),
+    strings.Join([]string{ strconv.Itoa(board[0][0]), strconv.Itoa(board[1][0]), strconv.Itoa(board[2][0]), }, ""),
+    strings.Join([]string{ strconv.Itoa(board[0][1]), strconv.Itoa(board[1][1]), strconv.Itoa(board[2][1]), }, ""),
+    strings.Join([]string{ strconv.Itoa(board[0][2]), strconv.Itoa(board[1][2]), strconv.Itoa(board[2][2]), }, ""),
+    strings.Join([]string{ strconv.Itoa(board[0][0]), strconv.Itoa(board[1][1]), strconv.Itoa(board[2][2]), }, ""),
+    strings.Join([]string{ strconv.Itoa(board[2][0]), strconv.Itoa(board[1][1]), strconv.Itoa(board[0][2]), }, ""),
+  }
+  
+  var isExistZero bool  
+  for _, v := range listTmp {
+    if strings.Count(v, "1") == 3 {
+      return 1
+    }
+    
+    if strings.Count(v, "2") == 3 {
+      return 2
+    }
+    
+    if strings.Count(v, "0") > 0 {
+      isExistZero = true
+    }
+  }
+  
+  if isExistZero {
+    return -1
+  }
+  
+  return 0
+}
+
+
+		__________________________ Task 4 ____________________________
+
+
+Write a function called sumIntervals/sum_intervals() that accepts an array of intervals, and returns the sum of all the interval lengths. Overlapping intervals should only be counted once.
+
+Intervals
+Intervals are represented by a pair of integers in the form of an array. The first value of the interval will always be less than the second value. Interval example: [1, 5] is an interval from 1 to 5. The length of this interval is 4.
+
+The sum of the lengths of these intervals is 7. Since [1, 4] and [3, 5] overlap, we can treat the interval as [1, 5], which has a length of 4.
+
+Examples:
+sumIntervals( [
+   [1,2],
+   [6, 10],
+   [11, 15]
+] ) => 9
+
+sumIntervals( [
+   [1,4],
+   [7, 10],
+   [3, 5]
+] ) => 7
+
+sumIntervals( [
+   [1,5],
+   [10, 20],
+   [1, 6],
+   [16, 19],
+   [5, 11]
+] ) => 19
+
+sumIntervals( [
+   [0, 20],
+   [-100000000, 10],
+   [30, 40]
+] ) => 100000030
+
+		МОЕ РЕШЕНИЕ === Solution:
+
+package kata
+
+import (
+  "sort"
+)
+
+func testFunc(intervals [][2]int) [][2]int {  
+  var beforeValue [2]int
+  min, max := intervals[0][0], intervals[0][1]
+  tmpList := [][2]int{}
+  for _, v := range intervals {
+    if beforeValue[0] <= v[0] && beforeValue[1] >= v[1] {
+      continue
+    }
+    
+    if v[0] <= max && v[1] >= max {
+      max = v[1]
+    }
+
+    if v[0] > max {
+      tmpList = append(tmpList, [2]int{ min, max })      
+    
+      min, max = v[0], v[1]
+    }
+    
+    beforeValue = [2]int{v[0], v[1]}
+  }
+  
+  tmpList = append(tmpList, [2]int{min, max})
+    
+  if len(intervals) > len(tmpList) {
+    return testFunc(tmpList)
+  }
+    
+  return intervals
+}
+
+func SumOfIntervals(intervals [][2]int) int {
+  var sum int
+  
+  sort.Slice(intervals, func(a, b int) bool {
+    return intervals[a][0] < intervals[b][0]
+  })
+  
+  var beforeValue [2]int
+  min, max := intervals[0][0], intervals[0][1]
+  tmpList, tmpList1 := [][2]int{}, [][2]int{}
+  for _, v := range intervals {
+    if beforeValue[0] <= v[0] && beforeValue[1] >= v[1] {
+      continue
+    }
+        
+    tmpList = append(tmpList, [2]int{ v[0], v[1] })
+    
+    if v[0] < max && v[1] > max {
+      max = v[1]
+    }
+
+    if v[0] > max {
+      tmpList1 = append(tmpList1, [2]int{ min, max })      
+    
+      min, max = v[0], v[1]
+    }
+    
+    beforeValue = [2]int{v[0], v[1]}
+  }
+  
+  tmpList1 = append(tmpList1, [2]int{min, max})
+  
+  var bv [2]int
+  for _, v := range testFunc(intervals) {
+    sum += v[1] - v[0]
+        
+    if v[0] >= 0 && bv[1] > v[0] {
+      sum -= bv[1] - v[0]
+    }
+  }
+
+  return sum
+}
+
+	    Другое решение
+	    
+package kata
+
+
+func SumOfIntervals(a [][2]int) int {
+  if len(a)==0 {return 0}
+  for i := range a {
+    for j := i + 1; j < len(a); j++ {
+      if a[i][1] < a[j][0] || a[j][1] < a[i][0] {continue} // not covering
+      if a[i][0] <= a[j][0] && a[j][1] <= a[i][1] { // a[j] is inside a[i]
+        a = append(a[:j], a[j+1:]...) // a.removeAt(j);
+        j--;
+        continue;
+      }
+      a[i] = [2]int{ min(a[i][0], a[j][0]), max(a[i][1], a[j][1]) } //extend
+      a = append(a[:j], a[j+1:]...) // a.removeAt(j);
+      j = i; //start from begining
+    }
+  }
+  sum := 0
+  for _,i := range a {
+    sum += i[1] - i[0]
+  }
+  return sum
+}
+func min(a,b int)int{
+  if a<b{return a}
+  return b
+}
+func max(a,b int)int{
+  if a>b{return a}
+  return b
+}

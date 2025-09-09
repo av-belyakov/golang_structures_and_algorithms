@@ -1,0 +1,20 @@
+version: "3.4"
+
+services:
+  kafka:
+    image: minio/minio
+    container_name: minio-test
+    ports:
+      - "9900:9000"
+      - "9901:9001"
+    command: "minio server $HOME/shared --console-address \":9001\""
+    environment:
+#      - MINIO_CONFIG_ENV_FILE=$HOME/minio/config/app.conf
+      - MINIO_ROOT_USER=${MINIO_ROOTUSER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOTPASSWD:-Gt9-Hb7-As1-Nm5}
+#      - MINIO_SERVER_URL=https://localhost:9000
+#      - MINIO_BROWSER_REDIRECT_URL=https://localhost:9001
+    volumes:
+      - $PWD/minio/data:$HOME/shared:rw
+      - $PWD/certs:/root/.minio/certs:ro
+    restart: unless-stopped

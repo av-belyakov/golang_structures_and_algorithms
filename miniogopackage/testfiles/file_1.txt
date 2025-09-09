@@ -1,0 +1,310 @@
+        Обеспечение защиты зависимостей
+Для управления зависимостями приложения удобно использовать многофункциональный инструмент npm. Но пакеты, с которыми вы работаете, могут обладать критическими уязвимостями защиты, которые также могут повлиять на ваше приложение. Надежность защиты вашего приложения определяется именно надежностью “самого слабого звена” среди зависимостей.
+
+Для того чтобы обеспечить защиту используемых вами сторонних пакетов, используйте один или оба инструмента: nsp и requireSafe. Эти два инструмента выполняют, в основном, одни и те же функции.
+
+nsp - это инструмент командной строки, выполняющий проверку согласно базе данных уязвимостей Node Security Project и определяющий, используются ли вашим приложением пакеты с известными уязвимостями. Установите данный инструмент следующим образом:
+
+
+$ npm i nsp -g
+
+Воспользуйтесь этой командой, чтобы передать файл npm-shrinkwrap.json на проверку в nodesecurity.io:
+
+
+$ nsp audit-shrinkwrap
+
+Воспользуйтесь этой командой, чтобы передать файл package.json на проверку в nodesecurity.io:
+
+
+$ nsp audit-package
+
+Ниже показано, как используется requireSafe для проверки модулей Node:
+
+
+$ npm install -g requiresafe
+$ cd your-app
+$ requiresafe check
+
+
+        EJS синтаксис
+https://github.com/mde/ejs/blob/master/docs/syntax.md
+
+<p>Hello, <%- myHtml %>.</p> //ничего не экранирует
+<p>Hello, <%= myHtml %>.</p> //экранирует специальные символы такие как < & ''
+
+<p>Hello, <%- myMaliciousHtml %>.</p>
+<p>Hello, <%= myMaliciousHtml %>.</p>
+Locals
+{
+  "myHtml": "<strong>Timothy</strong>"
+, "myMaliciousHtml": "</p><script>document.write()</script><p>"
+}
+HTML
+<p>Hello, <strong>Timothy</strong>.</p>
+<p>Hello, &lt;strong&gt;Timothy&lt;/strong&gt;.</p>
+
+<p>Hello, </p><script>document.write()</script><p>.</p>
+<p>Hello, &lt;/p&gt;&lt;script&gt;document.write()&lt;/script&gt;&lt;p&gt;.</p>
+
+<%# comment %> //коментарии для шаблонизатора
+
+<% %> //внутри выполняется любой javascript код
+
+-%> //обрезает все пустые строки которые могут появится при выполнении javascript командной
+_%> //удаляет все пробелы после кода
+
+        /* Если при запуске tcpdump пишет 'permission denied' */
+        -------------------------------------------------------
+
+apt-get install apparmor-utils
+aa-complain /usr/sbin/tcpdump //Setting /usr/sbin/tcpdump to complain mode.
+grep tcp /sys/kernel/security/apparmor/profiles //должен быть получен вывод /usr/sbin/tcpdump (complain)
+
+
+	        /* Система контроля версий Git */
+	        --------------------------------
+
+git config user.name 'Artemij Belyakov'
+git config user.email bart82@mail.ru
+
+        --- вывод информации---
+git log --oneline --decorate - просмотреть куда указывают указатели веток
+git log --oneline --decorate --graph --all - отображение истории коммитов, текущего положения указателей веток и истории ветвления
+git log -p -2 - показывает разницу внесенную в коммит и ограничивае вывод двумя коммитами
+git log --stat - сокращенная статистика для каждого коммита
+git status
+        подробнее в https://git-scm.com/book/ru/v2/
+
+        --- удаление файла ---
+git rm - удаляет файл как с диска так и из индекса
+git rm --cached README - удаление файла 'README' ТОЛЬКО из индекса
+
+        --- переименование файла ---
+git mv file_from file_to - переименование из 'file_from' в 'file_to'
+
+        --- фиксация изменений ---
+git commit -m 'initial commit of my project' - сделать коммит
+git commit -a -m 'made a change' - зафиксировать индексы и сделать коммит
+git commit --amend - дописать в недавно созданный коммит
+
+        --- отмена изменений ---
+git checkout -- CONTRIBUTING.md - отменить существующие изменения в файле 'CONTRIBUTING.md'
+
+        --- создание ветки ---
+git branch testing - создать ветку 'testing'
+git checkout testing - переключение на ветку 'testing'
+ или
+git switch testing
+git checkout -b <newbranchname> - создает новую ветку и переключается на неё
+        
+        --- получить список веток ---
+git branch - выводит список имеющихся веток с указателем текущей ветки
+git branch -v - просмотреть последний коммит для каждой из имеющихся веток
+ Опции --merged и --no-merged могут отфильтровать этот список для вывода только 
+ тех веток, которые слиты или ещё не слиты в текущую ветку.
+
+        --- удаление ветки ---
+git branch -d hotfix - удаление ветки 'hotfix'
+        
+        --- слияние ---
+git merge iss53 - выполнить слияние ветки 'iss53' с текущей веткой
+
+        --- удаленные репозитории ---
+git remote -v - получить список удаленных репозиториев
+git fetch <имя_сервера> - получить все изменение с сервера (при этом слияние еще не произойдет)
+git remote add pub https://github.com/paulboone/ticgit - добавление нового удаленного
+ репозитория с локальным имененем 'pub' с адреса 'https://github.com/paulboone/ticgit'
+git push origin master - отправка изменений на сервер 'origin' в ветку 'master'
+git remote show origin - просмотреть информацию об удаленном репозитории 'origin'
+
+git remote rename pb paul - переименование удаленного репозитория из 'pb' в 'paul'
+git remote rm paul - удаление удаленного репозитория
+
+			/******************************** 
+			*  Шпаргалка по командам Docker *
+			*				*
+			*********************************/
+	--- посмотреть список образов ---
+docker images
+
+	--- посмотреть список запущеных контейнеров или контейнеров которые запускались ранее ---
+docker ps -a
+
+	--- удалить образ  ---
+docker rmi <имя_образа>
+
+	--- удалить контейнер запущеный или остановленный ---
+docker rm <CONTAINER ID>
+
+	--- получить образ с docker hub ---
+docker pull <image_name>
+
+	--- запустить контейнер ---
+docker run -it --rm isems/mongo:v1 /bin/bash 
+    где:
+    -it - ключи для запуска в фоновом режиме, isems/mongo:v1 - наименование образа
+    --rm - после завершения работы контейнер удаляется
+    /bin/bash - оболочка выполнения команд
+    
+	--- создать новый образ на основе уже имеющегося и с параметрами описанными в файле Dockerfile ---
+docker build -t isems/mongo:v1 .
+    isems/mongo:v1 - наименование нового образа, где v1 это тег (очень желательный параметр)
+
+	--- запустить docker с пробросом портов ---
+docker run -d -P --name my_test_mongo_image.v1 isems/mongo:v1
+    где:
+    -d - ключ открепит (detach) терминал
+    -P - делает все открытые порты публичными и случайными
+    --name - это имя, которое мы хотим дать контейнеру
+
+	--- посмотреть порты доступные извне для того или иного контейнера ---
+docker port my_test_mongo_image.v1
+    Например для контейнера my_test_mongo_image.v1 будет следующий вывод:
+27017/tcp -> 0.0.0.0:49153
+27017/tcp -> :::49153
+    Соответственно, доступ к MongoDB за приделами контейнера возможен по порту 49153. Например, mongosh localhost:49153.
+    Также можно назначить свой порт, при обращении к нему будет автоматический проброс на порт внутри контейнера, для
+этого делаем:
+docker run -d -p 37017:27017 --name my_mongo.v1 isems/mongo:v1
+тогда вывод будет такой:
+27017/tcp -> 0.0.0.0:37017
+27017/tcp -> :::37017
+ 
+	--- просмотреть созданные докером сети ---
+docker network ls
+a8e53356fdbb   bridge    bridge    local
+deb8067ccd1a   host      host      local
+73d4b81e51b4   none      null      local
+    где:
+    bridge - это сеть, в которой контейнеры запущены по умолчанию.
+    host - 
+    none - 
+    
+	--- посмотреть параметры определнной сети ---
+docker network inspect bridge
+    Примерный вывод:
+[
+    {
+        "Name": "bridge",
+        "Id": "a8e53356fdbb314893de6766a0e17b52a381d2a78e64aeb8bb2ef985f783e61b",
+        "Created": "2022-01-24T14:38:33.402154367Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.17.0.0/16"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "ae750575da7c09c40e4759b20f470c240733f9b8156dba6e3a1e878b82c34d7d": {
+                "Name": "my_mongo_server",
+                "EndpointID": "bfa53dbd9b39a1e71c9973dd61bf3e81d10b98d159988a1728d5a03b1de5ec94",
+                "MacAddress": "02:42:ac:11:00:02",
+                "IPv4Address": "172.17.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {
+            "com.docker.network.bridge.default_bridge": "true",
+            "com.docker.network.bridge.enable_icc": "true",
+            "com.docker.network.bridge.enable_ip_masquerade": "true",
+            "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+            "com.docker.network.bridge.name": "docker0",
+            "com.docker.network.driver.mtu": "1500"
+        },
+        "Labels": {}
+    }
+]
+    где в свойстве Containers содержится информация о сетевом адресе запущенного контейнера
+    
+	--- создаем свою сеть с именем 'my-network' --- 
+docker network create my-network
+     
+        --- запустить докер внутри созданной ранее сети my-network ---
+docker run -d -p 37017:27017 --net my-network --name my_mongo_server isems/mongo:v1
+    где --net my-network - имя созданной ранее изолированной сети
+
+	--- выполнить команду внутри контейнера и получить в консоле вывод команды ---
+docker exec my_mongo_server, где my_mongo_server - наименование контейнера    
+    или войти в оболочку bash контейнера что бы выполнять команды там
+docker exec -ti my_mongo_server bash
+
+	--- получить подробную информаию о контейнере my_mongo_server ---
+docker inspect my_mongo_server
+
+	--- получить логи контейнера my_mongo_server ---
+docker logs my_mongo_server
+
+	--- получать логи контейнера непрерывно ---
+docker logs --follow my_mongo_server
+
+	--- вывод ограниченного количества логов ---
+docker logs --tail 10 my_mongo_server
+
+#	--- получить события контейнера ---
+#docker events my_mongo_server
+
+	--- получить публичные порты ---
+docker port my_mongo_server
+
+	--- получить выполняющиеся процессы ---
+docker top my_mongo_server
+
+	--- получить использование ресурсов ---
+docker stats my_mongo_server
+
+	--- получить изменения в файлах или директориях файловой системы контейнера ---
+docker diff my_mongo_server
+
+	--- Загрузка репозитория в tar (из файла или стандартного ввода) ---
+docker load < ubuntu.tar.gz
+docker load --input ubuntu.tar
+
+	--- Сохранение образа в tar-архив ---
+docker save busybox > ubuntu.tar
+
+	--- Удаление сети ---
+docker network rm MyOverlayNetwork
+
+	--- Подключение работающего контейнера к сети ---
+docker network connect MyOverlayNetwork nginx
+
+	--- Подключение контейнера к сети при его запуске ---
+docker run -it -d --network=MyOverlayNetwork nginx
+
+	--- Отключение контейнера от сети ---
+docker network disconnect MyOverlayNetwork nginx
+
+
+	--- СОЗДАНИЕ ОБРАЗА DOCKER ДЛЯ ЗАГРУЗКИ НА gitlab ---
+docker build -t gitlab.cloud.gcm:5050/a.belyakov/isems-ui:test .
+docker build -t gitlab.cloud.gcm:5050/a.belyakov/isems-mrsict:test .
+docker push gitlab.cloud.gcm:5050/a.belyakov/isems-ui:test
+docker push gitlab.cloud.gcm:5050/a.belyakov/isems-mrsict:test
+
+	--- примерный размер выполняющегося контейнера ---
+docker container ls -s
+docker image ls -  выводит размеры образов.
+	--- размеры промежуточных образов, из которых собран некий образ ---
+docker image history my_image:my_tag.
+docker image inspect my_image:tag позволяет узнать подробные сведения об образе
+
+		    /********************************************
+		    * 		По настройке golang 		*
+		    ********************************************/
+
+для того что бы godoc был доступен в консоле нужно выставить переменную окружения
+    export PATH="$GOPATH/bin:$PATH"
+или запускать godoc следующим способом $GOPATH/bin/godoc -http=:8181
