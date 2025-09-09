@@ -2,35 +2,35 @@
 
 ### Структура проекта golang_structures_and_algorithms
 
-##### commonfunctions Общие вспомогательные функции
+##### commonfunctions - Общие вспомогательные функции
 
-##### configurationpatterns Шаблоны написания конфигурационных опций
+##### configurationpatterns - Шаблоны написания конфигурационных опций
 
 - builder - установка конфигурационных опций на основе шаблона "Строитель" (Builder pattern)
 - fucnoptions - установка конфигурационных опций на основе "шаблона функциональных опций" (Functional options pattern)
 
-##### errorshandling Шаблоны группировки произвольного количества ошибок
+##### errorshandling - Шаблоны группировки произвольного количества ошибок
 
-##### generics Примеры написания дженериков (Generic)
+##### generics - Примеры написания дженериков (Generic)
 
-##### databaseinteractions Примеры взаимодействий с API различных БД
+##### databaseinteractions - Примеры взаимодействий с API различных БД
 
-###### sqlite3interaction Пример взаимодействия с Sqlite3 DB
+###### sqlite3interaction - Пример взаимодействия с Sqlite3 DB
 
-###### redisdbinteraction Пример взаимодействия с Redis DB
+###### redisdbinteraction - Пример взаимодействия с Redis DB
 
-##### inmemorycache Временное хранилище информации в памяти приложения (In-memory cache)
+##### inmemorycache - Временное хранилище информации в памяти приложения (In-memory cache)
 
-##### lineardatastructures Линейные структуры данных
+##### lineardatastructures - Линейные структуры данных
 
 - doublylinkedlist - линейная структура данных типа "Двойной связанный список" (Doubly Linked List)
 - linkedlist - линейная структура данных типа "Связанный список" (Linked List)
 - queues - структуры данных типа "Очереди" (Queues) или типа "Синхронизированная очередь" (Synchronized queue)
 - sets - структура данных типа "Множество" или "Набор" (Set)
 
-##### stringspackage Примеры работы со строками
+##### stringspackage - Примеры работы со строками
 
-##### structuraldesignpatterns Примеры шаблонов структур и алгоритмов
+##### structuraldesignpatterns - Примеры шаблонов структур и алгоритмов
 
 - adapterpattern - шаблон "Адаптер" (Adapter)
 - bridgepattern - шаблон "Мост" (Bridge)
@@ -42,13 +42,13 @@
 - proxypattern - шаблон Прокси (Proxy)
 - singletonpattern - шаблон Одиночка (Singleton)
 
-##### syncpackage Некоторые примеры работы с пакетом sync
+##### syncpackage - Некоторые примеры работы с пакетом sync
 
-##### testingpattern Примеры шаблонов тестирования
+##### testingpattern - Примеры шаблонов тестирования
 
-##### timepackage Примеры работы с пакетом time
+##### timepackage - Примеры работы с пакетом time
 
-##### workingswithfiles Примеры работы с файлами
+##### workingswithfiles - Примеры работы с файлами
 
 - checkfileexist - проверка существования файлов
 - checkrwpermissions - проверка прав доступа файла на запись и чтение
@@ -63,19 +63,21 @@
 - usebufferedwriter - использование буфера для записи в файл
 - writebyteorstringtofile - запись среза байт или строки в файл
 
-##### traversingdirectories Примеры обхода директорий
+##### traversingdirectories - Примеры обхода директорий
 
-##### filemonitoring Мониторинг файлов
+##### filemonitoring - Мониторинг файлов
 
-##### mechanicspipes Механизмы конвейеров
+##### mechanicspipes - Механизмы конвейеров
 
 - anonymouspipes - анонимные конвееры
 - navigatingnamedpipes - навигация по именованным каналам
 
-##### unixsocket Unix сокеты
+##### unixsocket - Unix сокеты
 
-##### errorspackage Некоторые примеры работ с ошибками
+##### errorspackage - Некоторые примеры работ с ошибками
 
-##### flagpackage Пример работы с пакетом flag
+##### flagpackage - Пример работы с пакетом flag
 
-##### certificategenerator Пример генерации самоподписных сертификатов
+##### certificategenerator - Пример генерации самоподписных сертификатов
+
+##### miniogopackage - Пример взаимодействия с MinIO с помощью пакета minio-go
