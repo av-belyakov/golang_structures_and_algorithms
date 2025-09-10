@@ -1,8 +1,8 @@
 package supportfunctions
 
 import (
+	"fmt"
 	"os"
-	"path"
 	"slices"
 )
 
@@ -17,7 +17,8 @@ func DeleteFilesInDirectory(dir string, files []string) error {
 		if slices.ContainsFunc(dirInfo, func(f os.DirEntry) bool {
 			return v == f.Name()
 		}) {
-			if err := os.Remove(path.Join(dir, v)); err != nil {
+			filePath := fmt.Sprintf("%s/%s", dir, v)
+			if err := os.RemoveAll(filePath); err != nil {
 				return err
 			}
 		}
