@@ -1,4 +1,34 @@
-# Как создать нового пользователя.
+# MinIO Image
+
+### Порядок разворачивания из docker-compose.yml
+
+Выполнить
+
+```bash
+./gencert.sh
+```
+
+для того чтобы сгенерировать сертификат и приватный ключ
+
+Запустить Docker
+
+```bash
+docker-compose up -d
+```
+
+Создать внутри контейнера нового пользователя для MinIO с учётными данными
+из файла ../.env
+
+```bash
+docker exec -it minio-test bash
+mc alias list # смотрим список доступных TARGETS
+mc alias set miniouserroot https://localhost:9000 <имя root пользователя> password # если нет root из docker-compose.yml, то создаём его (могут быть проблемы с сертификатом, надо попробовать несколько раз)
+mc admin user add miniouserroot <user name> <passwd> # создаём нового пользователя
+mc admin policy attach miniouserroot readwrite --user gcm # добавляем политику доступа
+mc admin user list miniouserroot # проверяем наличие пользователя
+```
+
+### Как создать нового пользователя.
 
 #### 1. Создаём новый alias:
 
@@ -17,25 +47,25 @@ mc alias remove miniouserroot
 #### 2. Проверить наличие alias:
 
 ```bash
-mc ls или mc ls miniotuserroot
+mc alias ls или mc alias ls miniotuserroot
 ```
 
 #### 3. После того как подключились к серверу MinIO, создаём пользователя:
 
 ```bash
-mc admin user add miniotuserroot testuser 123qwe123
+mc admin user add miniouserroot testuser 123qwe123
 ```
 
 #### 4. Создаём политику доступа:
 
 ```bash
-mc admin policy attach minioadmin readwrite --user gcm
+mc admin policy attach miniouserroot readwrite --user gcm
 ```
 
 #### 5. Теперь можно посмотреть список всех пользователей:
 
 ```bash
-mc admin user list miniotuserroot
+mc admin user list miniouserroot
 ```
 
 #### 6. Смотрим информацию о пользователе:

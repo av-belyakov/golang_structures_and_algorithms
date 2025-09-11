@@ -130,6 +130,7 @@ func TestMinIoGoTLS(t *testing.T) {
 	})
 
 	t.Run("Тест 7. Копирование объектов", func(t *testing.T) {
+		//в рамках одного bucket
 		for _, v := range testObjects {
 			uploadInfo, err := minioClient.CopyObject(
 				t.Context(),
@@ -146,6 +147,48 @@ func TestMinIoGoTLS(t *testing.T) {
 
 			fmt.Printf("UploadInfo:%#v\n", uploadInfo)
 		}
+
+		bucketTmp := "my-test-tmp-storage"
+		//с одного bucket в другой тестовый bucket
+		err := minioClient.MakeBucket(t.Context(), bucketTmp, minio.MakeBucketOptions{
+			Region: "nowhere",
+		})
+		assert.NoError(t, err)
+
+		for _, v := range testObjects {
+			_, err := minioClient.CopyObject(
+				t.Context(),
+				minio.CopyDestOptions{
+					Bucket:          bucketTmp,
+					Object:          fmt.Sprintf("file_%s", v),
+					ReplaceMetadata: true,
+				},
+				minio.CopySrcOptions{
+					Bucket: testBucketName,
+					Object: v,
+				})
+			assert.NoError(t, err)
+		}
+
+		chInfo := minioClient.ListObjects(t.Context(), bucketTmp, minio.ListObjectsOptions{})
+		result := []minio.ObjectInfo{}
+
+		//fmt.Println("Object info:")
+		for info := range chInfo {
+			result = append(result, info)
+
+			//fmt.Printf("\t%+v\n", result)
+		}
+		assert.NotEqual(t, len(result), 0)
+
+		//удаляем временный bucket
+		for _, obj := range result {
+			assert.NoError(t, minioClient.RemoveObject(t.Context(), bucketTmp, obj.Key, minio.RemoveObjectOptions{}))
+		}
+		assert.NoError(t, minioClient.RemoveBucket(t.Context(), bucketTmp))
+		isExist, err := minioClient.BucketExists(t.Context(), bucketTmp)
+		assert.NoError(t, err)
+		assert.False(t, isExist)
 	})
 
 	//t.Run("", func(t *testing.T) {
