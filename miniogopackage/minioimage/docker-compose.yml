@@ -1,7 +1,7 @@
 version: "3.4"
 
 services:
-  kafka:
+  minio:
     image: minio/minio
     container_name: minio-test
     ports:
