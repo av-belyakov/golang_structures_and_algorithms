@@ -81,3 +81,7 @@
 ##### certificategenerator - Пример генерации самоподписных сертификатов
 
 ##### miniogopackage - Пример взаимодействия с MinIO с помощью пакета minio-go
+
+##### dbmigration - Примеры настройки пакетов для миграции базы данных
+
+- golangmigrate - Пример работы с пакетом golang-migrate

@@ -1,0 +1,1 @@
+DROP SEQUENCE IF EXISTS public.users_actions_id_seq CASCADE;
