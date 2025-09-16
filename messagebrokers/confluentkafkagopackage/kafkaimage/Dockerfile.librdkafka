@@ -1,0 +1,78 @@
+# Это только образец Dockerfile для сборки образа под любое приложение
+# которое будет использовать пакет confluent-kafka-go для взаимодействия
+# с брокером сообщений Kafka
+
+ARG BUILD_IMAGE_NAME=golang:1.24.5-alpine
+ARG IMAGE_NAME=alpine
+
+FROM ${BUILD_IMAGE_NAME} AS packages_image
+ENV PATH=/usr/local/go/bin:$PATH
+WORKDIR /go/src
+COPY go.mod go.sum ./
+RUN echo "packages_image" && \
+    go mod download
+
+FROM ${BUILD_IMAGE_NAME} AS build_image
+LABEL temporary=""
+ARG BRANCH
+ARG VERSION
+ARG USERNAME
+ARG USERPASSWD
+ENV GOOS=linux
+ENV CGO_ENABLED=1
+WORKDIR /go/
+COPY --from=packages_image /go ./
+# устанавливаем дополнительные пакеты, в том числе и те, которые нужны для
+#сборки librdkafka, пакет confluent-kafka-go всего лишь обёртка для librdkafka
+RUN echo -e "build_image" && \
+    rm -r ./src && \
+    apk update && \
+    apk add --no-cache g++ make bash git openssl-dev musl-dev pkgconf zlib-dev
+# собираем и устанавливаем librdkafka из исходников
+RUN git clone --depth 1 --branch v2.11.1 https://github.com/edenhill/librdkafka.git && \
+    cd librdkafka && \
+    ./configure --install-deps && \
+    make -j$(nproc) && \
+    make install
+#RUN git clone -b ${BRANCH} http://${USERNAME}:${USERPASSWD}@<путь до приложения> ./src/${VERSION}/ && \
+# Пример, исходный код с репозитория на gitlab.cloud.gcm 
+#git clone -b ${BRANCH} http://${USERNAME}:${USERPASSWD}@gitlab.cloud.gcm/a.belyakov/placeholder_doc-basedb_bi.zone.git ./src/${VERSION}/ && \
+# исходный код с репозитория на github.com 
+#git clone -b ${BRANCH} https://github.com/av-belyakov/placeholder_doc-basedb_bi.zone.git  ./src/${VERSION}/ && \
+# сборка приложения
+#    go build -C ./src/${VERSION}/cmd/ -o ../app -tags musl
+
+FROM ${IMAGE_NAME}
+LABEL author="Artemij Belyakov"
+# аргумент STATUS содержит режим запуска приложения prod или development
+#если значение содержит запись development, то в таком режиме и будет
+#работать приложение, во всех остальных случаях режим работы prod
+ARG STATUS=""
+ARG VERSION
+ARG USERNAME=dockeruser
+ARG US_DIR=/opt/placeholder-doc-basedb-bi-zone
+ARG GROUP_ID=1500
+ENV GO_PHDOCBASEDBBZ_MAIN=${STATUS}
+# устанавливаем дополнительные пакеты, в том числе и те, которые нужны для
+#сборки librdkafka, пакет confluent-kafka-go всего лишь обёртка для librdkafka
+RUN apk update && \
+    apk add --no-cache g++ make bash git openssl-dev musl-dev pkgconf zlib-dev
+# собираем и устанавливаем librdkafka из исходников
+RUN git clone --depth 1 --branch v2.2.0 https://github.com/edenhill/librdkafka.git && \
+    cd librdkafka && \
+    ./configure --install-deps && \
+    make -j$(nproc) && \
+    make install
+# создаём пользователя и группу с определённым ID
+#это нужно для пробрасывания логов за пределы docker
+RUN addgroup --g ${GROUP_ID} groupcontainer && \
+    adduser -u ${GROUP_ID} -G groupcontainer -D ${USERNAME} --home ${US_DIR}
+USER ${USERNAME}
+WORKDIR ${US_DIR}
+RUN mkdir ./logs
+COPY --from=build_image /go/src/${VERSION}/app ./
+COPY --from=build_image /go/src/${VERSION}/README.md ./
+COPY --from=build_image /go/src/${VERSION}/version ./ 
+COPY config/* ./config/
+
+ENTRYPOINT [ "./app" ]

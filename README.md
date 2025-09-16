@@ -19,7 +19,7 @@
 
 ###### redisdbinteraction - Пример взаимодействия с Redis DB
 
-##### inmemorycache - Временное хранилище информации в памяти приложения (In-memory cache)
+##### inmemorycache - Временное хранилище информации в памяти приложения (in-memory cache)
 
 ##### lineardatastructures - Линейные структуры данных
 
@@ -85,3 +85,9 @@
 ##### dbmigration - Примеры настройки пакетов для миграции базы данных
 
 - golangmigrate - Пример работы с пакетом golang-migrate
+
+##### messagebrokers - Примеры настройки пакетов для взаимодействия с различными брокерами сообщений
+
+- confluent-kafka-go - пакет для работы с брокером сообщений kafka
+
+##### mapmanipulation - примеры работы с картой (Map)
