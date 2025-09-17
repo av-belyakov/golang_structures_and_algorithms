@@ -21,6 +21,7 @@ import (
 func TestKafkaApi(t *testing.T) {
 	var (
 		kafkaApi   *kafpkg.KafkaApiModule
+		p          *kafka.Producer
 		testTopics map[string]string = map[string]string{
 			"event-topic": "event-message.topic",
 			"alert-topic": "alert-message.topic",
@@ -28,6 +29,8 @@ func TestKafkaApi(t *testing.T) {
 
 		eventTopic string = "event-message.topic"
 		alertTopic string = "alert-message.topic"
+
+		nameRegionalObject string = "kafka-test-object"
 
 		err error
 	)
@@ -40,7 +43,7 @@ func TestKafkaApi(t *testing.T) {
 	go func() {
 		<-ctx.Done()
 
-		fmt.Println("placeholder_doc-basedb-bi-zone module is Stop")
+		fmt.Println("Останов модуля тестирования")
 
 		stop()
 	}()
@@ -48,27 +51,16 @@ func TestKafkaApi(t *testing.T) {
 	logging := kafpkg.NewLogging()
 	counting := kafpkg.NewCounting()
 
-	kafkaApi, err = kafpkg.New(
-		counting,
-		logging,
-		//kafpkg.WithHost("localhost"),
-		kafpkg.WithHost("10.0.0.136"),
-		//kafpkg.WithPort(19092),
-		kafpkg.WithPort(9092),
-		kafpkg.WithNameRegionalObject("kafka-test-object"),
-		kafpkg.WithTopicsSubscription(testTopics))
-	if err != nil {
-		log.Fatalln(err)
-	}
-
+	//обработчик счётчика, логов и сообщений модуля
 	go func(
 		ctx context.Context,
 		l kafpkg.Logger,
-		c *kafpkg.Counting,
-		kApi *kafpkg.KafkaApiModule) {
+		c *kafpkg.Counting) {
 		for {
 			select {
 			case <-ctx.Done():
+				fmt.Println("Останов обработчика счётчика и логов")
+
 				return
 
 			case count := <-c.GetChan():
@@ -80,19 +72,29 @@ func TestKafkaApi(t *testing.T) {
 				if msg.GetType() == "error" {
 					log.Fatal(msg.GetMessage())
 				}
-			case msg := <-kafkaApi.GetChanOutput():
-				fmt.Printf("Message from Kafka:'%#v'\n", msg)
 			}
 		}
-	}(ctx, logging, counting, kafkaApi)
+	}(ctx, logging, counting)
 
-	t.Run("Тест 1. Запуск модуля взаимодействия с Kafka", func(t *testing.T) {
+	t.Run("Тест 1. Инициализация модуля Kafka API", func(t *testing.T) {
+		kafkaApi, err = kafpkg.New(
+			counting,
+			logging,
+			//kafpkg.WithHost("127.0.0.1"),
+			kafpkg.WithHost("10.0.0.136"),
+			kafpkg.WithPort(9092),
+			kafpkg.WithNameRegionalObject(nameRegionalObject),
+			kafpkg.WithTopicsSubscription(testTopics))
+		assert.NoError(t, err)
+	})
+
+	t.Run("Тест 2. Запуск модуля взаимодействия с Kafka", func(t *testing.T) {
 		err = kafkaApi.Start(ctx, func() func(context.Context, *kafpkg.KafkaApiModule) {
 			return func(ctx context.Context, api *kafpkg.KafkaApiModule) {
 				for {
 					select {
 					case <-ctx.Done():
-						fmt.Println("закрываем обработчик входящих сообщений")
+						fmt.Println("Останов обработчика входящих сообщений")
 
 						return
 
@@ -108,7 +110,7 @@ func TestKafkaApi(t *testing.T) {
 								topicType = topicKey
 							}
 
-							api.GetChanInput() <- kafpkg.ChInputSettings{
+							api.GetChanOutput() <- kafpkg.ChOutputSettings{
 								TopicType: topicType,
 								Data:      msg.Value,
 							}
@@ -122,11 +124,10 @@ func TestKafkaApi(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("Тест 2. Передача и подтверждение передачи сообщений в топики", func(t *testing.T) {
-		p, err := kafka.NewProducer(&kafka.ConfigMap{
-			//"bootstrap.servers": "localhost",
-			"bootstrap.servers": "10.0.0.136",
-			"group.id":          fmt.Sprintf("%s-group", "group-test"),
+	t.Run("Тест 3. Инициализация Kafka Producer", func(t *testing.T) {
+		p, err = kafka.NewProducer(&kafka.ConfigMap{
+			//"bootstrap.servers": "127.0.0.1", //может содержать ip:port
+			"bootstrap.servers": "10.0.0.136:9092",
 		})
 		assert.NoError(t, err)
 
@@ -135,6 +136,8 @@ func TestKafkaApi(t *testing.T) {
 			for {
 				select {
 				case <-ctx.Done():
+					fmt.Println("Останов обработчика сообщений об успешности доставки")
+
 					return
 
 				case e, isNotClose := <-p.Events():
@@ -148,9 +151,9 @@ func TestKafkaApi(t *testing.T) {
 						// постоянный сбой после завершения повторных попыток.
 						m := ev
 						if m.TopicPartition.Error != nil {
-							fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
+							fmt.Printf("Доставка в Kafka не успешна: %v\n", m.TopicPartition.Error)
 						} else {
-							fmt.Printf("Delivered message to topic %s [%d] at offset %v\n",
+							fmt.Printf("Успешная доставка в Kafka %s [%d] at offset %v\n",
 								*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 						}
 					case kafka.Error:
@@ -163,30 +166,49 @@ func TestKafkaApi(t *testing.T) {
 				}
 			}
 		}(ctx, p)
-
-		t.Run("Тест 2.1. Передача сообщения в топик 'event-message.topic'", func(t *testing.T) {
-			err = p.Produce(&kafka.Message{
-				TopicPartition: kafka.TopicPartition{
-					Topic:     &eventTopic,
-					Partition: kafka.PartitionAny,
-				},
-				Value: []byte("some small message to 'event-message.topic'"),
-			}, nil)
-			assert.NoError(t, err)
-		})
-
-		t.Run("Тест 2.2. Передача сообщения в топик 'alert-message.topic'", func(t *testing.T) {
-			err = p.Produce(&kafka.Message{
-				TopicPartition: kafka.TopicPartition{
-					Topic:     &alertTopic,
-					Partition: kafka.PartitionAny,
-				},
-				Value: []byte("some small message to 'alert-message.topic'"),
-			}, nil)
-			assert.NoError(t, err)
-		})
 	})
 
-	// t.Run("", func(t *testing.T) {
-	// })
+	t.Run("Тест 4.1. Передача сообщения в топик 'event-message.topic'", func(t *testing.T) {
+		err = p.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{
+				Topic:     &eventTopic,
+				Partition: kafka.PartitionAny,
+			},
+			Value: []byte("Some small message to 'event-message.topic'. Test message!"),
+		}, nil)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Тест 4.2. Передача сообщения в топик 'alert-message.topic'", func(t *testing.T) {
+		err = p.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{
+				Topic:     &alertTopic,
+				Partition: kafka.PartitionAny,
+			},
+			Value: []byte("Some small message to 'alert-message.topic'. Test message!"),
+		}, nil)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Тест 5. Обработчик сообщений модуля", func(t *testing.T) {
+		msgOne, isOpen := <-kafkaApi.GetChanOutput()
+		assert.True(t, isOpen)
+		assert.NotEmpty(t, msgOne.TopicType)
+		assert.NotEmpty(t, msgOne.Data)
+
+		data, ok := msgOne.Data.([]byte)
+		assert.True(t, ok)
+		fmt.Printf("Успешный приём сообщений из Kafka. TopicType: '%s', Data: '%s'\n", msgOne.TopicType, string(data))
+
+		msgTwo, isOpen := <-kafkaApi.GetChanOutput()
+		assert.True(t, isOpen)
+		assert.NotEmpty(t, msgTwo.TopicType)
+		assert.NotEmpty(t, msgTwo.Data)
+
+		data, ok = msgTwo.Data.([]byte)
+		assert.True(t, ok)
+		fmt.Printf("Успешный приём сообщений из Kafka. TopicType: '%s', Data: '%s'\n", msgTwo.TopicType, string(data))
+	})
+
+	// t.Run("", func(t *testing.T) {})
 }

@@ -47,3 +47,7 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
     depends_on:
       - kafka
+
+networks:
+  soc-network:
+    driver: bridge
