@@ -18,7 +18,7 @@ import (
 	kafpkg "github.com/av-belyakov/golang_structures_and_algorithms/messagebrokers/confluentkafkagopackage"
 )
 
-func TestKafkaApi(t *testing.T) {
+func TestKafkaApiSimpleConnection(t *testing.T) {
 	var (
 		kafkaApi   *kafpkg.KafkaApiModule
 		p          *kafka.Producer
