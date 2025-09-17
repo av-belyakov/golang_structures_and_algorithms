@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/av-belyakov/golang_structures_and_algorithms/errorspackage"
@@ -18,7 +19,7 @@ import (
 	kafpkg "github.com/av-belyakov/golang_structures_and_algorithms/messagebrokers/confluentkafkagopackage"
 )
 
-func TestKafkaApiSimpleConnection(t *testing.T) {
+func TestKafkaApiSSLConnection(t *testing.T) {
 	var (
 		kafkaApi   *kafpkg.KafkaApiModule
 		p          *kafka.Producer
@@ -76,13 +77,24 @@ func TestKafkaApiSimpleConnection(t *testing.T) {
 		}
 	}(ctx, logging, counting)
 
+	if err := godotenv.Load("./kafkaimage/.env"); err != nil {
+		log.Fatalln(err)
+	}
+
 	t.Run("Тест 1. Инициализация модуля Kafka API", func(t *testing.T) {
 		kafkaApi, err = kafpkg.New(
 			counting,
 			logging,
 			kafpkg.WithHost("localhost"),
 			//kafpkg.WithHost("10.0.0.136"),
-			kafpkg.WithPort(9092),
+			kafpkg.WithPort(9093),
+			kafpkg.WithSSLKeyPassword(os.Getenv("KAFKA_SSL_KEY_PASSWORD")),
+			// 						!!!!!!!!!!!!!!!!!!!!!!!!!
+			// Скорее всего эти придётся заменить на сертификаты получаемые из certs
+			//kafpkg.WithSSLKeyStorePassword(os.Getenv("KAFKA_SSL_KEYSTORE_PASSWORD")),
+			//kafpkg.WithSSLTruststorePassword(os.Getenv("KAFKA_SSL_TRUSTSTORE_PASSWORD")),
+			//kafpkg.WithSSLKeyStoreLocation("./kafkaimage/keys/kafka.keystore.jks"),
+			//kafpkg.WithSSLTruststoreLocation("./kafkaimage/keys/kafka.truststore.jks"),
 			kafpkg.WithNameRegionalObject(nameRegionalObject),
 			kafpkg.WithTopicsSubscription(testTopics))
 		assert.NoError(t, err)
@@ -90,8 +102,15 @@ func TestKafkaApiSimpleConnection(t *testing.T) {
 
 	t.Run("Тест 2. Создание новых топиков если их нет", func(t *testing.T) {
 		ac, err := kafka.NewAdminClient(&kafka.ConfigMap{
-			"bootstrap.servers": "localhost", //может содержать ip:port
+			"bootstrap.servers": "localhost:9093", //может содержать ip:port
 			//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
+			"security.protocol": "ssl",
+			// SSL сертификаты
+			"ssl.ca.location":          "./kafkaimage/certs/ca.crt ",
+			"ssl.certificate.location": "./kafkaimage/certs/client.crt",
+			"ssl.key.location":         "./kafkaimage/certs/client.key",
+			"ssl.key.password":         os.Getenv("KAFKA_SSL_KEY_PASSWORD"),
+			"client.id":                "go-kafka-ssl-admin-client",
 		})
 		assert.NoError(t, err)
 
@@ -154,8 +173,15 @@ func TestKafkaApiSimpleConnection(t *testing.T) {
 
 	t.Run("Тест 4. Инициализация Kafka Producer", func(t *testing.T) {
 		p, err = kafka.NewProducer(&kafka.ConfigMap{
-			"bootstrap.servers": "localhost", //может содержать ip:port
+			"bootstrap.servers": "localhost:9093", //может содержать ip:port
 			//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
+			"security.protocol": "ssl",
+			// SSL сертификаты
+			"ssl.ca.location":          "./kafkaimage/certs/ca.crt ",
+			"ssl.certificate.location": "./kafkaimage/certs/client.crt",
+			"ssl.key.location":         "./kafkaimage/certs/client.key",
+			"ssl.key.password":         os.Getenv("KAFKA_SSL_KEY_PASSWORD"),
+			"client.id":                "go-kafka-ssl-producer",
 		})
 		assert.NoError(t, err)
 
