@@ -15,4 +15,7 @@ services:
     volumes:
       - $PWD/minio/data:$HOME/shared:rw
       - $PWD/certs:/root/.minio/certs:ro
+      # выполняем для корректного отображения даты с учетом временной зоны
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped

@@ -17,10 +17,15 @@ type KafkaApiModule struct {
 
 // kafkaApiSettings настройки
 type kafkaApiSettings struct {
-	nameRegionalObject string
-	host               string
-	cachettl           int
-	port               int
+	nameRegionalObject    string
+	sslKeyPassword        string
+	sslKeyStorePassword   string
+	sslKeyStoreLocation   string
+	sslTruststorePassword string
+	sslTruststoreLocation string
+	host                  string
+	cachettl              int
+	port                  int
 }
 
 // KafkaApiOptions функциональные опции
