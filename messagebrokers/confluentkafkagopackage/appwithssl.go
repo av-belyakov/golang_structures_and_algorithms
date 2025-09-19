@@ -50,7 +50,7 @@ func (api *KafkaApiModule) StartWithSSL(ctx context.Context, handlerFunc func() 
 		"bootstrap.servers": fmt.Sprintf("%s:%d", api.settings.host, api.settings.port),
 		"security.protocol": "ssl",
 		// SSL сертификаты
-		"ssl.ca.location":          "./kafkaimage/certs/ca.crt ",
+		"ssl.ca.location":          "./kafkaimage/certs/ca.crt",
 		"ssl.certificate.location": "./kafkaimage/certs/client.crt",
 		"ssl.key.location":         "./kafkaimage/certs/client.key",
 		"ssl.key.password":         api.settings.sslKeyPassword,

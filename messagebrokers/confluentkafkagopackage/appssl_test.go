@@ -2,6 +2,8 @@ package confluentkafkagopackage_test
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"os"
@@ -52,6 +54,28 @@ func TestKafkaApiSSLConnection(t *testing.T) {
 	logging := kafpkg.NewLogging()
 	counting := kafpkg.NewCounting()
 
+	verifyCertificate := func(caPath string) error {
+		caData, err := os.ReadFile(caPath)
+		if err != nil {
+			return fmt.Errorf("failed to read CA: %v", err)
+		}
+
+		block, _ := pem.Decode(caData)
+		if block == nil {
+			return fmt.Errorf("failed to parse CA PEM")
+		}
+
+		caCert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return fmt.Errorf("failed to parse CA certificate: %v", err)
+		}
+
+		fmt.Printf("CA Subject: %s\n", caCert.Subject)
+		fmt.Printf("CA Valid from: %s to %s\n", caCert.NotBefore, caCert.NotAfter)
+
+		return nil
+	}
+
 	//обработчик счётчика, логов и сообщений модуля
 	go func(
 		ctx context.Context,
@@ -81,6 +105,10 @@ func TestKafkaApiSSLConnection(t *testing.T) {
 		log.Fatalln(err)
 	}
 
+	t.Run("Тест 0. Проверка сертификатов", func(t *testing.T) {
+		assert.NoError(t, verifyCertificate("./kafkaimage/certs/ca.crt"))
+	})
+
 	t.Run("Тест 1. Инициализация модуля Kafka API", func(t *testing.T) {
 		kafkaApi, err = kafpkg.New(
 			counting,
@@ -102,11 +130,11 @@ func TestKafkaApiSSLConnection(t *testing.T) {
 
 	t.Run("Тест 2. Создание новых топиков если их нет", func(t *testing.T) {
 		ac, err := kafka.NewAdminClient(&kafka.ConfigMap{
-			"bootstrap.servers": "localhost:9093", //может содержать ip:port
+			"bootstrap.servers": "192.168.13.3:9093", //может содержать ip:port
 			//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
 			"security.protocol": "ssl",
 			// SSL сертификаты
-			"ssl.ca.location":          "./kafkaimage/certs/ca.crt ",
+			"ssl.ca.location":          "./kafkaimage/certs/ca.crt",
 			"ssl.certificate.location": "./kafkaimage/certs/client.crt",
 			"ssl.key.location":         "./kafkaimage/certs/client.key",
 			"ssl.key.password":         os.Getenv("KAFKA_SSL_KEY_PASSWORD"),
@@ -177,7 +205,7 @@ func TestKafkaApiSSLConnection(t *testing.T) {
 			//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
 			"security.protocol": "ssl",
 			// SSL сертификаты
-			"ssl.ca.location":          "./kafkaimage/certs/ca.crt ",
+			"ssl.ca.location":          "./kafkaimage/certs/ca.crt",
 			"ssl.certificate.location": "./kafkaimage/certs/client.crt",
 			"ssl.key.location":         "./kafkaimage/certs/client.key",
 			"ssl.key.password":         os.Getenv("KAFKA_SSL_KEY_PASSWORD"),

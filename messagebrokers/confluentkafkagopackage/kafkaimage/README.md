@@ -1,16 +1,35 @@
 # Инструкция по запуску Kafka с SSL
 
-1. Сгенерируйте ключи:
+### Генерация ключей:
 
 ```bash
 ./kafka-keygen.sh
 ```
 
-2. Запустите docker-compose.ssl.yml
+Для того что бы проверить CA (Certificate Authority) выполняем
+
+```bash
+openssl s_client -connect localhost:9093 -CAfile ./certs/ca.crt </dev/null
+```
+
+так же можно посмотреть сертификат отдельно
+
+```bash
+openssl verify -CAfile ./certs/ca.crt ./certs/server.crt
+```
+
+### Запуск docker-compose.ssl.yml
 
 ```bash
 docker-compose -f docker-compose.ssl.yml up -d
 ```
+
+Что бы проверить что Kafka слушает SSL порт
+
+```bash
+openssl s_client -connect localhost:9093 -showcerts </dev/null
+``
+
 
 #### Так на всякий случай
 
@@ -48,3 +67,4 @@ docker-compose -f docker-compose.ssl.yml up -d
 -v Сокращенное от verbose, утилита Keytool будет выводить много дополнительной информации в командную строку в удобочитаемом формате.
 -protected Определяет, должен ли пароль хранилища ключей предоставляться каким-либо внешним механизмом, например, аппаратный токен. Допустимые значения: true и false.
 -Jjavaoption Строка опций для Java VM которая генерирует пару ключей и создает хранилище.
+```
