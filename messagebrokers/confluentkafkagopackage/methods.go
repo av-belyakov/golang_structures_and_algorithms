@@ -72,7 +72,7 @@ func WithCacheTTL(v int) KafkaApiOptions {
 	}
 }
 
-// WithNameRegionalObject наименование которое будет отображатся в статистике подключений NATS
+// WithNameRegionalObject наименование
 func WithNameRegionalObject(v string) KafkaApiOptions {
 	return func(n *KafkaApiModule) error {
 		n.settings.nameRegionalObject = v
@@ -89,6 +89,51 @@ func WithTopicsSubscription(v map[string]string) KafkaApiOptions {
 		}
 
 		n.topics = v
+
+		return nil
+	}
+}
+
+// WithSSLKeyPassword пароль для приватного ключа в keystore
+func WithSSLKeyPassword(v string) KafkaApiOptions {
+	return func(n *KafkaApiModule) error {
+		n.settings.sslKeyPassword = v
+
+		return nil
+	}
+}
+
+// WithSSLKeyStorePassword пароль для keystore kafka.keystore.jks
+func WithSSLKeyStorePassword(v string) KafkaApiOptions {
+	return func(n *KafkaApiModule) error {
+		n.settings.sslKeyStorePassword = v
+
+		return nil
+	}
+}
+
+// WithSSLTruststorePassword пароль для truststore kafka.truststore.jks
+func WithSSLTruststorePassword(v string) KafkaApiOptions {
+	return func(n *KafkaApiModule) error {
+		n.settings.sslTruststorePassword = v
+
+		return nil
+	}
+}
+
+// WithSSLKeyStoreLocation местоположение файла kafka.keystore.jks
+func WithSSLKeyStoreLocation(v string) KafkaApiOptions {
+	return func(n *KafkaApiModule) error {
+		n.settings.sslKeyStoreLocation = v
+
+		return nil
+	}
+}
+
+// WithSSLTruststoreLocation местоположение файла kafka.truststore.jks
+func WithSSLTruststoreLocation(v string) KafkaApiOptions {
+	return func(n *KafkaApiModule) error {
+		n.settings.sslTruststoreLocation = v
 
 		return nil
 	}
