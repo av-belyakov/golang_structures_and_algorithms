@@ -16,7 +16,7 @@ func TestKafkaSSL(t *testing.T) {
 	)
 
 	ac, err := kafka.NewAdminClient(&kafka.ConfigMap{
-		"bootstrap.servers": "192.168.13.3:9093", //может содержать ip:port
+		"bootstrap.servers": "127.0.0.1:9093", //может содержать ip:port
 		//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
 		"security.protocol": "ssl",
 		// SSL сертификаты

@@ -11,19 +11,16 @@ services:
       - "9093:9093"
     env_file: .env
     environment:
-      # KRaft режим (без Zookeeper)
+      KAFKA_CLUSTER_ID: Gjsdu1T-eMCtK--X86sw
+
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: controller,broker
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9092     
 
-      KAFKA_CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
-
       # Настройки listeners
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:SSL,INTERNAL:SSL,EXTERNAL:SSL
       KAFKA_CFG_LISTENERS: CONTROLLER://:9092,INTERNAL://:39093,EXTERNAL://:9093
-      #KAFKA_CFG_LISTENERS: CONTROLLER://:9092,INTERNAL://:9093,EXTERNAL://:9094
       KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://kafka:39093,EXTERNAL://localhost:9093 #,EXTERNAL://192.168.13.3:9093
-      #KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://kafka:9093,EXTERNAL://localhost:9093
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CFG_EXTER_BROKER_LISTENER_NAME: EXTERNAL
@@ -33,9 +30,9 @@ services:
       # пароль для приватного ключа в keystore
       KAFKA_CFG_SSL_KEY_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
       # пароль для keystore kafka.keystore.jks
-      KAFKA_CFG_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEYSTORE_PASSWORD
+      KAFKA_CFG_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
       # пароль для truststore kafka.truststore.jks
-      KAFKA_CFG_SSL_TRUSTSTORE_PASSWORD: $KAFKA_SSL_TRUSTSTORE_PASSWORD
+      KAFKA_CFG_SSL_TRUSTSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
       KAFKA_CFG_SSL_KEYSTORE_LOCATION: /opt/bitnami/kafka/config/certs/kafka.keystore.jks
       KAFKA_CFG_SSL_TRUSTSTORE_LOCATION: /opt/bitnami/kafka/config/certs/kafka.truststore.jks
       KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
@@ -56,8 +53,6 @@ services:
       #KAFKA_CFG_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
       #KAFKA_CFG_SUPER_USERS: User:admin
     volumes:
-      #- $PWD/kafka-logs:/tmp/kraft-combined-logs
-      #- $PWD/keys:/opt/bitnami/kafka/config/certs:ro
       - $PWD/certs/kafka.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks:ro
       - $PWD/certs/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks:ro
       # выполняем для корректного отображения даты с учетом временной зоны
@@ -79,19 +74,15 @@ services:
     ports:
       - 8181:8080
     environment:
-      #DYNAMIC_CONFIG_ENABLED: 'true'
-      #KAFKA_CLUSTERS_0_NAME: bitnami/kafka:internal
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /certs/kafka.keystore.jks
-      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEYSTORE_PASSWORD
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:39093 # SSL LISTENER!
-      #KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093 # SSL LISTENER!
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:39093
       KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: /certs/kafka.truststore.jks
-      KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: $KAFKA_SSL_TRUSTSTORE_PASSWORD
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: $KAFKA_SSL_KEY_PASSWORD
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "" # DISABLE COMMON NAME VERIFICATION
     volumes:
-      #- $PWD/keys:/certs:ro
       - $PWD/certs:/certs:ro
     depends_on:
       - kafka

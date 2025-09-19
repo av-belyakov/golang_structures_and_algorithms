@@ -18,6 +18,12 @@ openssl s_client -connect localhost:9093 -CAfile ./certs/ca.crt </dev/null
 openssl verify -CAfile ./certs/ca.crt ./certs/server.crt
 ```
 
+посмотреть список допустимых IP-адресов для сертификата
+
+```bash
+openssl x509 -in ./certs/server.crt -text -noout | grep -A5 "Subject Alternative Name"
+```
+
 ### Запуск docker-compose.ssl.yml
 
 ```bash
