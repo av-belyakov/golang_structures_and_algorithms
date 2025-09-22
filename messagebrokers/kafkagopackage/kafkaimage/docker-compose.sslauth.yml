@@ -32,8 +32,7 @@ services:
       KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
     volumes:
       - kafka_data:/bitnami/kafka
-      - $PWD/keys:/opt/bitnami/kafka/config/certs
-      #- $PWD/certs:/opt/bitnami/kafka/config/certs
+      - $PWD/certs:/opt/bitnami/kafka/config/certs
       # выполняем для корректного отображения даты с учетом временной зоны
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -59,10 +58,8 @@ services:
       # KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "" отключает проверку hostname для SSL
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
     volumes:
-      - $PWD/keys/client.keystore.jks:/certs/client.keystore.jks:ro
-      #- $PWD/certs/client.keystore.jks:/certs/client.keystore.jks:ro
-      - $PWD/keys/client.truststore.jks:/certs/client.truststore.jks:ro
-      #- $PWD/certs/kafka.truststore.jks:/certs/client.truststore.jks:ro
+      - $PWD/certs/client.keystore.jks:/certs/client.keystore.jks:ro
+      - $PWD/certs/kafka.truststore.jks:/certs/client.truststore.jks:ro
     depends_on:
       - kafka
 

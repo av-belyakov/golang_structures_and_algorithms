@@ -37,7 +37,7 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 		})
 	}
 
-	publicCert, err := os.ReadFile("./kafkaimage/keys/ca-cert")
+	publicCert, err := os.ReadFile("./kafkaimage/certs/ca-cert")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -45,7 +45,7 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(publicCert)
 
-	cert, err := tls.LoadX509KeyPair("./kafkaimage/keys/client-cert.pem", "./kafkaimage/keys/client-key.pem")
+	cert, err := tls.LoadX509KeyPair("./kafkaimage/certs/client-cert.pem", "./kafkaimage/certs/client-key.pem")
 	if err != nil {
 		log.Fatalln(err)
 	}

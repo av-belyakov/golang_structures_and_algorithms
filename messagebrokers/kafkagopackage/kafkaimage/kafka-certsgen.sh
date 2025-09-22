@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KEY_DIR="keys"
+KEY_DIR="certs"
 ALIAS_KEY_ROOT=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
 ALIAS_KEY_STORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
 ALIAS_CLIENT_KEY_STORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)

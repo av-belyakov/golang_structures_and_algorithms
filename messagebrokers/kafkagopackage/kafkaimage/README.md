@@ -6,7 +6,7 @@
 Выполнить:
 
 ```bash
-./kafka-keygen.sh
+./kafka-certsgen.sh
 ```
 
 Из всех созданных, в результате работы скрипта kafka-keygen.sh, файлов для Kafka нужны kafka.keystore.jks и kafka.truststore.jks, для kafka-go ca.crt
