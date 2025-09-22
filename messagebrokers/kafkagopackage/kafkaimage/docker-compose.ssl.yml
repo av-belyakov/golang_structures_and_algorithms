@@ -1,7 +1,6 @@
 services:
   # Разварачивает Kafka с SSL  
   kafka:
-    #image: apache/kafka:latest
     image: bitnami/kafka:latest
     container_name: kafka
     restart: unless-stopped
@@ -26,7 +25,7 @@ services:
       KAFKA_CFG_EXTER_BROKER_LISTENER_NAME: EXTERNAL
       
       # SSL настройки - серверная аутентификация
-      KAFKA_CFG_SSL_CLIENT_AUTH: none
+      KAFKA_CFG_SSL_CLIENT_AUTH: none # required или none
       # пароль для приватного ключа в keystore
       KAFKA_CFG_SSL_KEY_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
       # пароль для keystore kafka.keystore.jks
@@ -38,6 +37,7 @@ services:
       KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
       
       # Настройки кластера
+      #KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
       KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -73,15 +73,24 @@ services:
       - soc-network
     ports:
       - 8181:8080
+    env_file: .env
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
-      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /certs/kafka.keystore.jks
-      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:39093
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+      #KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /certs/kafka.keystore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /certs/client.keystore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      # для клиента truststore такой же что и у сервера Kafka
       KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: /certs/kafka.truststore.jks
       KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: $KAFKA_SSL_KEY_PASSWORD
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "" # DISABLE COMMON NAME VERIFICATION
+
+      # KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION=/certs/client.keystore.jks
+      # KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD=changeit
+      # KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION=/certs/client.truststore.jks
+      # KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD=changeit
+      # KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD=changeit
     volumes:
       - $PWD/certs:/certs:ro
     depends_on:

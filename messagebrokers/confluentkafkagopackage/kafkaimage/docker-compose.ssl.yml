@@ -1,7 +1,6 @@
 services:
   # Разварачивает Kafka с SSL  
   kafka:
-    #image: apache/kafka:latest
     image: bitnami/kafka:latest
     container_name: kafka
     restart: unless-stopped

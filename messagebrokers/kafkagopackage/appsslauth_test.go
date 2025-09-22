@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestKafkaConnectionSSL(t *testing.T) {
+func TestKafkaConnectionSSLAuth(t *testing.T) {
 	var (
 		topicsName []string = []string{"topic-A0", "topic-A1"}
 		newTopics  []kafka.TopicConfig
@@ -37,7 +37,7 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		})
 	}
 
-	publicCert, err := os.ReadFile("./kafkaimage/certs/ca.crt")
+	publicCert, err := os.ReadFile("./kafkaimage/keys/ca-cert")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -45,11 +45,19 @@ func TestKafkaConnectionSSL(t *testing.T) {
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(publicCert)
 
+	cert, err := tls.LoadX509KeyPair("./kafkaimage/keys/client-cert.pem", "./kafkaimage/keys/client-key.pem")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
 		DualStack: true,
 		TLS: &tls.Config{
-			RootCAs: caCertPool,
+			RootCAs:            caCertPool,
+			Certificates:       []tls.Certificate{cert},
+			InsecureSkipVerify: true, // Отключает проверку hostname (для тестов)
+			// InsecureSkipVerify: false, // Для production
 		},
 	}
 
@@ -83,7 +91,10 @@ func TestKafkaConnectionSSL(t *testing.T) {
 			Balancer: &kafka.Hash{},
 			Transport: &kafka.Transport{
 				TLS: &tls.Config{
-					RootCAs: caCertPool,
+					RootCAs:            caCertPool,
+					Certificates:       []tls.Certificate{cert},
+					InsecureSkipVerify: true, // Отключает проверку hostname (для тестов)
+					// InsecureSkipVerify: false, // Для production
 				},
 			},
 		}
@@ -140,15 +151,6 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		cancel()
 		r.Close()
 	})
-
-	t.Run("Тест 4. ", func(t *testing.T) {
-
-	})
-
-	//t.Run("Тест Finally. Удаляет все созданные топики.", func(t *testing.T) {
-	//	err := conn.DeleteTopics(topicsName...)
-	//	assert.NoError(t, err)
-	//})
 
 	t.Cleanup(func() {
 		conn.Close()

@@ -2,6 +2,7 @@
 
 KEY_DIR="certs"
 ALIAS_KEY_STORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
+ALIAS_CLIENT_KEY_STORE=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
 
 if [ ! -f .env ]; then
     echo "⚠️  Необходимо создать файл .env со следующими переменными окружения:"
@@ -16,6 +17,7 @@ fi
 # Экспортируем переменные окружения
 export $(grep -v '^#' .env | grep -v '^$' | grep '=' | sed 's/"//g' | xargs)
 
+echo "Удаляем из директории $KEY_DIR старые ключи и сертификаты..."
 rm -R $KEY_DIR
 if [ ! -d $KEY_DIR ]; then
     mkdir $KEY_DIR
@@ -109,7 +111,17 @@ keytool -importkeystore -srckeystore $KEY_DIR/server.p12 -srcstoretype PKCS12 \
 keytool -keystore $KEY_DIR/kafka.truststore.jks -alias $ALIAS_KEY_STORE -import \
   -file $KEY_DIR/ca.crt -storepass $KAFKA_SSL_KEY_PASSWORD -noprompt
 
-echo "5. Verifying certificate chain..."
+echo "5. Создаём JKS хранилище для клиента..."
+keytool -keystore $KEY_DIR/client.keystore.jks -alias $ALIAS_CLIENT_KEY_STORE -validity 365 -genkey -keyalg RSA \
+  -storepass $KAFKA_SSL_KEY_PASSWORD -keypass $KAFKA_SSL_KEY_PASSWORD -dname "CN=client"
+
+# Подписание клиентского сертификата
+keytool -keystore $KEY_DIR/client.keystore.jks -alias $ALIAS_CLIENT_KEY_STORE -certreq -file $KEY_DIR/client-cert-file \
+  -storepass $KAFKA_SSL_KEY_PASSWORD
+openssl x509 -req -CA $KEY_DIR/ca-cert -CAkey ca-key -in $KEY_DIR/client-cert-file -out $KEY_DIR/client-cert-signed \
+  -days 365 -CAcreateserial -passin pass:$KAFKA_SSL_KEY_PASSWORD
+
+echo "6. Verifying certificate chain..."
 echo "Server certificate:"
 openssl verify -CAfile $KEY_DIR/ca.crt $KEY_DIR/server.crt
 
@@ -122,5 +134,5 @@ echo "Server private:   certs/server.key"
 echo "Server public:    certs/server.crt"
 echo "Client private:   certs/client.key"
 echo "Client public:    certs/client.crt"
-echo "Server keystore:  certs/kafka.keystore.jks (password: $$KAFKA_SSL_KEY_PASSWORD)"
-echo "Server truststore: certs/kafka.truststore.jks (password: $$KAFKA_SSL_KEY_PASSWORD)"
+echo "Server keystore:  certs/kafka.keystore.jks (password: $KAFKA_SSL_KEY_PASSWORD)"
+echo "Server truststore: certs/kafka.truststore.jks (password: $KAFKA_SSL_KEY_PASSWORD)"
