@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"slices"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 	var (
 		topicsName []string = []string{"topic-A0", "topic-A1"}
 		newTopics  []kafka.TopicConfig
+		pathCerts  string = "../kafkaimage/certs"
 
 		usersList []string = []string{
 			`{"name":"Некрасова Василиса Андреевна", "Age": 31, "Address": "г. Москва, Зелёный проспект, д.23, кв. 12"}`,
@@ -37,7 +39,7 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 		})
 	}
 
-	publicCert, err := os.ReadFile("./kafkaimage/certs/ca-cert")
+	publicCert, err := os.ReadFile(path.Join(pathCerts, "ca.crt"))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -45,7 +47,7 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(publicCert)
 
-	cert, err := tls.LoadX509KeyPair("./kafkaimage/certs/client-cert.pem", "./kafkaimage/certs/client-key.pem")
+	cert, err := tls.LoadX509KeyPair(path.Join(pathCerts, "client-cert.pem"), path.Join(pathCerts, "client-key.pem"))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -55,9 +57,9 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 		DualStack: true,
 		TLS: &tls.Config{
 			RootCAs:            caCertPool,
+			ServerName:         "localhost",
 			Certificates:       []tls.Certificate{cert},
-			InsecureSkipVerify: true, // Отключает проверку hostname (для тестов)
-			// InsecureSkipVerify: false, // Для production
+			InsecureSkipVerify: false, // если true то отключает проверку hostname (для тестов)
 		},
 	}
 
@@ -92,9 +94,9 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 			Transport: &kafka.Transport{
 				TLS: &tls.Config{
 					RootCAs:            caCertPool,
+					ServerName:         "localhost",
 					Certificates:       []tls.Certificate{cert},
-					InsecureSkipVerify: true, // Отключает проверку hostname (для тестов)
-					// InsecureSkipVerify: false, // Для production
+					InsecureSkipVerify: false,
 				},
 			},
 		}
@@ -104,12 +106,14 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 				Value: fmt.Appendf(
 					nil,
 					`{{"datetime":%d}, {"info": %v}}`,
-					time.Microsecond.Nanoseconds(), v),
+					time.Now().UnixMilli(), v),
 			})
 			assert.NoError(t, err)
 		}
 
-		w.Close()
+		t.Cleanup(func() {
+			w.Close()
+		})
 	})
 
 	t.Run("Тест 3. Принять сообщение из топика.", func(t *testing.T) {
@@ -121,38 +125,42 @@ func TestKafkaConnectionSSLAuth(t *testing.T) {
 			Dialer:      dialer,
 		})
 
-		// Чтение только одного сообщения
-		msg, err := r.ReadMessage(t.Context())
-		assert.NoError(t, err)
+		t.Run("Тест 3.1. Получить одно сообщение", func(t *testing.T) {
+			// Чтение только одного сообщения
+			msg, err := r.ReadMessage(t.Context())
+			assert.NoError(t, err)
 
-		//fmt.Printf("Message:'%#v'\n", msg)
-		fmt.Printf("Reseived message from topic:'%s'\n", msg.Topic)
-		fmt.Printf("Data:'%s'\n", string(msg.Value))
+			fmt.Printf("Reseived message from topic:'%s'\n", msg.Topic)
+			fmt.Printf("Data:'%s'\n", string(msg.Value))
+		})
 
-		ctx, cancel := context.WithTimeout(t.Context(), time.Duration(time.Second*5))
-		// Чтение следующего сообщения в очереди. Блокировка если сообщений
-		// в очереди больше нет.
-	DONE:
-		for {
-			select {
-			case <-ctx.Done():
-				break DONE
+		t.Run("Тест 3.2. Получить все сообщения", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(t.Context(), time.Duration(time.Second*5))
+			// Чтение следующего сообщения в очереди. Блокировка если сообщений
+			// в очереди больше нет.
+		DONE:
+			for {
+				select {
+				case <-ctx.Done():
+					break DONE
 
-			default:
-				msg, err = r.FetchMessage(ctx)
-				if err != nil && err.Error() != "context deadline exceeded" {
-					assert.NoError(t, err)
+				default:
+					msg, err := r.FetchMessage(ctx)
+					if err != nil && err.Error() != "context deadline exceeded" {
+						assert.NoError(t, err)
+					}
+
+					fmt.Printf("Topic: '%s', Next message:'%v'\n", msg.Topic, string(msg.Value))
 				}
-
-				fmt.Printf("Topic: '%s', Next message:'%v'\n", msg.Topic, string(msg.Value))
 			}
-		}
 
-		cancel()
-		r.Close()
-	})
+			t.Cleanup(func() {
+				cancel()
+			})
+		})
 
-	t.Cleanup(func() {
-		conn.Close()
+		t.Cleanup(func() {
+			r.Close()
+		})
 	})
 }

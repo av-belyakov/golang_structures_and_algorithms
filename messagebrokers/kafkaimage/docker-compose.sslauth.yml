@@ -1,0 +1,72 @@
+services:
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    restart: unless-stopped
+    networks:
+      - soc-network
+    ports:
+      - "9093:9093"
+    env_file: .env
+    environment:
+      KAFKA_CLUSTER_ID: $KAFKA_CLUSTER_ID
+
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9092     
+
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:SSL,INTERNAL:SSL,EXTERNAL:SSL
+      KAFKA_CFG_LISTENERS: CONTROLLER://:9092,INTERNAL://:39093,EXTERNAL://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://kafka:39093,EXTERNAL://localhost:9093 #,EXTERNAL://192.168.13.3:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CFG_EXTER_BROKER_LISTENER_NAME: EXTERNAL
+
+      KAFKA_CFG_SSL_CLIENT_AUTH: required
+      KAFKA_CFG_SSL_KEY_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CFG_SSL_KEYSTORE_LOCATION: /opt/bitnami/kafka/config/certs/kafka.keystore.jks
+      KAFKA_CFG_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CFG_SSL_TRUSTSTORE_LOCATION: /opt/bitnami/kafka/config/certs/kafka.truststore.jks
+      KAFKA_CFG_SSL_TRUSTSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+    volumes:
+      - kafka_data:/bitnami/kafka
+      - $PWD/$CERT_DIR/kafka.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks:ro
+      - $PWD/$CERT_DIR/kafka.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks:ro
+      # выполняем для корректного отображения даты с учетом временной зоны
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+  kafka-ui:
+    image: kafbat/kafka-ui:main
+    container_name: kafka-ui
+    restart: unless-stopped
+    networks:
+      - soc-network
+    ports:
+      - 8181:8080
+    env_file: .env
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:39093
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEY_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /certs/client.keystore.jks
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: /certs/client.truststore.jks
+      # KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "" отключает проверку hostname для SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
+    volumes:
+      - $PWD/$CERT_DIR/client.keystore.jks:/certs/client.keystore.jks:ro
+      - $PWD/$CERT_DIR/kafka.truststore.jks:/certs/client.truststore.jks:ro
+    depends_on:
+      - kafka
+
+volumes:
+  kafka_data:
+    driver: local
+
+networks:
+  soc-network:
+    driver: bridge

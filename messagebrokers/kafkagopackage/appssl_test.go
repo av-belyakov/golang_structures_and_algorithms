@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"slices"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ func TestKafkaConnectionSSL(t *testing.T) {
 	var (
 		topicsName []string = []string{"topic-A0", "topic-A1"}
 		newTopics  []kafka.TopicConfig
+		pathCerts  string = "../kafkaimage/certs/"
 
 		usersList []string = []string{
 			`{"name":"Некрасова Василиса Андреевна", "Age": 31, "Address": "г. Москва, Зелёный проспект, д.23, кв. 12"}`,
@@ -37,7 +39,7 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		})
 	}
 
-	publicCert, err := os.ReadFile("./kafkaimage/certs/ca.crt")
+	publicCert, err := os.ReadFile(path.Join(pathCerts, "ca.crt"))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -49,7 +51,9 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		Timeout:   10 * time.Second,
 		DualStack: true,
 		TLS: &tls.Config{
-			RootCAs: caCertPool,
+			RootCAs:            caCertPool,
+			ServerName:         "localhost",
+			InsecureSkipVerify: false, // true,
 		},
 	}
 
@@ -83,7 +87,9 @@ func TestKafkaConnectionSSL(t *testing.T) {
 			Balancer: &kafka.Hash{},
 			Transport: &kafka.Transport{
 				TLS: &tls.Config{
-					RootCAs: caCertPool,
+					RootCAs:            caCertPool,
+					ServerName:         "localhost",
+					InsecureSkipVerify: false,
 				},
 			},
 		}
@@ -93,12 +99,14 @@ func TestKafkaConnectionSSL(t *testing.T) {
 				Value: fmt.Appendf(
 					nil,
 					`{{"datetime":%d}, {"info": %v}}`,
-					time.Microsecond.Nanoseconds(), v),
+					time.Now().UnixMicro(), v),
 			})
 			assert.NoError(t, err)
 		}
 
-		w.Close()
+		t.Cleanup(func() {
+			w.Close()
+		})
 	})
 
 	t.Run("Тест 3. Принять сообщение из топика.", func(t *testing.T) {
@@ -110,35 +118,43 @@ func TestKafkaConnectionSSL(t *testing.T) {
 			Dialer:      dialer,
 		})
 
-		// Чтение только одного сообщения
-		msg, err := r.ReadMessage(t.Context())
-		assert.NoError(t, err)
+		t.Run("Тест 3.1. Получить одно сообщение", func(t *testing.T) {
+			// Чтение только одного сообщения
+			msg, err := r.ReadMessage(t.Context())
+			assert.NoError(t, err)
 
-		//fmt.Printf("Message:'%#v'\n", msg)
-		fmt.Printf("Reseived message from topic:'%s'\n", msg.Topic)
-		fmt.Printf("Data:'%s'\n", string(msg.Value))
+			fmt.Printf("Reseived message from topic:'%s'\n", msg.Topic)
+			fmt.Printf("Data:'%s'\n", string(msg.Value))
+		})
 
-		ctx, cancel := context.WithTimeout(t.Context(), time.Duration(time.Second*5))
-		// Чтение следующего сообщения в очереди. Блокировка если сообщений
-		// в очереди больше нет.
-	DONE:
-		for {
-			select {
-			case <-ctx.Done():
-				break DONE
+		t.Run("Тест 3.2. Получить все сообщения", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(t.Context(), time.Duration(time.Second*5))
+			// Чтение следующего сообщения в очереди. Блокировка если сообщений
+			// в очереди больше нет.
+		DONE:
+			for {
+				select {
+				case <-ctx.Done():
+					break DONE
 
-			default:
-				msg, err = r.FetchMessage(ctx)
-				if err != nil && err.Error() != "context deadline exceeded" {
-					assert.NoError(t, err)
+				default:
+					msg, err := r.FetchMessage(ctx)
+					if err != nil && err.Error() != "context deadline exceeded" {
+						assert.NoError(t, err)
+					}
+
+					fmt.Printf("Topic: '%s', Next message:'%v'\n", msg.Topic, string(msg.Value))
 				}
-
-				fmt.Printf("Topic: '%s', Next message:'%v'\n", msg.Topic, string(msg.Value))
 			}
-		}
 
-		cancel()
-		r.Close()
+			t.Cleanup(func() {
+				cancel()
+			})
+		})
+
+		t.Cleanup(func() {
+			r.Close()
+		})
 	})
 
 	t.Run("Тест 4. ", func(t *testing.T) {
