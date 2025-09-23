@@ -15,9 +15,9 @@
 
 ##### databaseinteractions - Примеры взаимодействий с API различных БД
 
-###### sqlite3interaction - Пример взаимодействия с Sqlite3 DB
+- sqlite3interaction - Пример взаимодействия с Sqlite3 DB
 
-###### redisdbinteraction - Пример взаимодействия с Redis DB
+- redisdbinteraction - Пример взаимодействия с Redis DB
 
 ##### inmemorycache - Временное хранилище информации в памяти приложения (in-memory cache)
 
