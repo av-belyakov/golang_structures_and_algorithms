@@ -94,46 +94,28 @@ func WithTopicsSubscription(v map[string]string) KafkaApiOptions {
 	}
 }
 
-// WithSSLKeyPassword пароль для приватного ключа в keystore
-func WithSSLKeyPassword(v string) KafkaApiOptions {
+// WithLocationCertificateCA местоположение корневого сертификата
+func WithLocationCertificateCA(v string) KafkaApiOptions {
 	return func(n *KafkaApiModule) error {
-		n.settings.sslKeyPassword = v
+		n.settings.locationCertificateCA = v
 
 		return nil
 	}
 }
 
-// WithSSLKeyStorePassword пароль для keystore kafka.keystore.jks
-func WithSSLKeyStorePassword(v string) KafkaApiOptions {
+// WithLocationClientCertificate местоположение клиентского сертификата в формате PEM
+func WithLocationClientCertificate(v string) KafkaApiOptions {
 	return func(n *KafkaApiModule) error {
-		n.settings.sslKeyStorePassword = v
+		n.settings.locationClientCertificate = v
 
 		return nil
 	}
 }
 
-// WithSSLTruststorePassword пароль для truststore kafka.truststore.jks
-func WithSSLTruststorePassword(v string) KafkaApiOptions {
+// WithLocationClientKey местоположение приватного клиентского ключа в формате PEM
+func WithLocationClientKey(v string) KafkaApiOptions {
 	return func(n *KafkaApiModule) error {
-		n.settings.sslTruststorePassword = v
-
-		return nil
-	}
-}
-
-// WithSSLKeyStoreLocation местоположение файла kafka.keystore.jks
-func WithSSLKeyStoreLocation(v string) KafkaApiOptions {
-	return func(n *KafkaApiModule) error {
-		n.settings.sslKeyStoreLocation = v
-
-		return nil
-	}
-}
-
-// WithSSLTruststoreLocation местоположение файла kafka.truststore.jks
-func WithSSLTruststoreLocation(v string) KafkaApiOptions {
-	return func(n *KafkaApiModule) error {
-		n.settings.sslTruststoreLocation = v
+		n.settings.locationClientKey = v
 
 		return nil
 	}

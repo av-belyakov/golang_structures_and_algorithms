@@ -21,10 +21,9 @@ import (
 	kafpkg "github.com/av-belyakov/golang_structures_and_algorithms/messagebrokers/confluentkafkagopackage"
 )
 
-func TestKafkaApiSSLConnection(t *testing.T) {
+func TestKafkaApiConnectionSSLAuth(t *testing.T) {
 	var (
 		kafkaApi   *kafpkg.KafkaApiModule
-		p          *kafka.Producer
 		testTopics map[string]string = map[string]string{
 			"event-topic": "event-message.topic",
 			"alert-topic": "alert-message.topic",
@@ -101,70 +100,31 @@ func TestKafkaApiSSLConnection(t *testing.T) {
 		}
 	}(ctx, logging, counting)
 
-	if err := godotenv.Load("./kafkaimage/.env"); err != nil {
+	if err := godotenv.Load("../kafkaimage/.env"); err != nil {
 		log.Fatalln(err)
 	}
 
-	t.Run("Тест 0. Проверка сертификатов", func(t *testing.T) {
-		assert.NoError(t, verifyCertificate("./kafkaimage/certs/ca.crt"))
+	t.Run("Тест 0. Проверка корневого сертификата", func(t *testing.T) {
+		assert.NoError(t, verifyCertificate("../kafkaimage/certs/ca.crt"))
 	})
 
 	t.Run("Тест 1. Инициализация модуля Kafka API", func(t *testing.T) {
-		kafkaApi, err = kafpkg.New(
+		kafkaApi, err = kafpkg.NewWithSSL(
 			counting,
 			logging,
 			kafpkg.WithHost("localhost"),
 			//kafpkg.WithHost("10.0.0.136"),
 			kafpkg.WithPort(9093),
-			kafpkg.WithSSLKeyPassword(os.Getenv("KAFKA_SSL_KEY_PASSWORD")),
-			// 						!!!!!!!!!!!!!!!!!!!!!!!!!
-			// Скорее всего эти придётся заменить на сертификаты получаемые из certs
-			//kafpkg.WithSSLKeyStorePassword(os.Getenv("KAFKA_SSL_KEYSTORE_PASSWORD")),
-			//kafpkg.WithSSLTruststorePassword(os.Getenv("KAFKA_SSL_TRUSTSTORE_PASSWORD")),
-			//kafpkg.WithSSLKeyStoreLocation("./kafkaimage/keys/kafka.keystore.jks"),
-			//kafpkg.WithSSLTruststoreLocation("./kafkaimage/keys/kafka.truststore.jks"),
+			kafpkg.WithLocationCertificateCA("../kafkaimage/certs/ca.crt"),
+			kafpkg.WithLocationClientCertificate("../kafkaimage/certs/client-cert.pem"),
+			kafpkg.WithLocationClientKey("../kafkaimage/certs/client-key.pem"),
 			kafpkg.WithNameRegionalObject(nameRegionalObject),
 			kafpkg.WithTopicsSubscription(testTopics))
 		assert.NoError(t, err)
 	})
 
-	t.Run("Тест 2. Создание новых топиков если их нет", func(t *testing.T) {
-		ac, err := kafka.NewAdminClient(&kafka.ConfigMap{
-			"bootstrap.servers": "192.168.13.3:9093", //может содержать ip:port
-			//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
-			"security.protocol": "ssl",
-			// SSL сертификаты
-			"ssl.ca.location":          "./kafkaimage/certs/ca.crt",
-			"ssl.certificate.location": "./kafkaimage/certs/client.crt",
-			"ssl.key.location":         "./kafkaimage/certs/client.key",
-			"ssl.key.password":         os.Getenv("KAFKA_SSL_KEY_PASSWORD"),
-			"client.id":                "go-kafka-ssl-admin-client",
-		})
-		assert.NoError(t, err)
-
-		topics := []kafka.TopicSpecification{
-			{
-				Topic:         alertTopic,
-				NumPartitions: 1,
-				//ReplicationFactor: 1,
-			},
-			{
-				Topic:         eventTopic,
-				NumPartitions: 1,
-				//ReplicationFactor: 1,
-			},
-		}
-		result, err := ac.CreateTopics(ctx, topics)
-		assert.NoError(t, err)
-
-		fmt.Println("Create topics result:")
-		for k, v := range result {
-			fmt.Printf("  %d.\n\tName:'%s'\n\tError:'%s'\n", k, v.Topic, v.Error.String())
-		}
-	})
-
-	t.Run("Тест 3. Запуск модуля взаимодействия с Kafka", func(t *testing.T) {
-		err = kafkaApi.Start(ctx, func() func(context.Context, *kafpkg.KafkaApiModule) {
+	t.Run("Тест 2. Запуск модуля взаимодействия с Kafka", func(t *testing.T) {
+		err = kafkaApi.StartWithSSL(ctx, func() func(context.Context, *kafpkg.KafkaApiModule) {
 			return func(ctx context.Context, api *kafpkg.KafkaApiModule) {
 				for {
 					select {
@@ -200,17 +160,7 @@ func TestKafkaApiSSLConnection(t *testing.T) {
 	})
 
 	t.Run("Тест 4. Инициализация Kafka Producer", func(t *testing.T) {
-		p, err = kafka.NewProducer(&kafka.ConfigMap{
-			"bootstrap.servers": "localhost:9093", //может содержать ip:port
-			//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
-			"security.protocol": "ssl",
-			// SSL сертификаты
-			"ssl.ca.location":          "./kafkaimage/certs/ca.crt",
-			"ssl.certificate.location": "./kafkaimage/certs/client.crt",
-			"ssl.key.location":         "./kafkaimage/certs/client.key",
-			"ssl.key.password":         os.Getenv("KAFKA_SSL_KEY_PASSWORD"),
-			"client.id":                "go-kafka-ssl-producer",
-		})
+		p, err := kafkaApi.ProducerWithSSL(ctx)
 		assert.NoError(t, err)
 
 		// обработчик сообщений об успешности доставки
@@ -248,31 +198,35 @@ func TestKafkaApiSSLConnection(t *testing.T) {
 				}
 			}
 		}(ctx, p)
+
+		t.Run("Тест 4.1. Передача сообщения в топик 'event-message.topic'", func(t *testing.T) {
+			err = p.Produce(&kafka.Message{
+				TopicPartition: kafka.TopicPartition{
+					Topic:     &eventTopic,
+					Partition: kafka.PartitionAny,
+				},
+				Value: fmt.Appendf(nil, "%s: Some small message to 'event-message.topic'. Test message.", time.Now().Format(time.RFC3339Nano)),
+			}, nil)
+			assert.NoError(t, err)
+		})
+
+		t.Run("Тест 4.2. Передача сообщения в топик 'alert-message.topic'", func(t *testing.T) {
+			err = p.Produce(&kafka.Message{
+				TopicPartition: kafka.TopicPartition{
+					Topic:     &alertTopic,
+					Partition: kafka.PartitionAny,
+				},
+				Value: fmt.Appendf(nil, "%s: Some small message to 'alert-message.topic'. Test message.", time.Now().Format(time.RFC3339Nano)),
+			}, nil)
+			assert.NoError(t, err)
+		})
+
+		t.Cleanup(func() {
+			p.Close()
+		})
 	})
 
-	t.Run("Тест 5.1. Передача сообщения в топик 'event-message.topic'", func(t *testing.T) {
-		err = p.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{
-				Topic:     &eventTopic,
-				Partition: kafka.PartitionAny,
-			},
-			Value: []byte("Some small message to 'event-message.topic'. Test message."),
-		}, nil)
-		assert.NoError(t, err)
-	})
-
-	t.Run("Тест 5.2. Передача сообщения в топик 'alert-message.topic'", func(t *testing.T) {
-		err = p.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{
-				Topic:     &alertTopic,
-				Partition: kafka.PartitionAny,
-			},
-			Value: []byte("Some small message to 'alert-message.topic'. Test message."),
-		}, nil)
-		assert.NoError(t, err)
-	})
-
-	t.Run("Тест 6. Обработчик сообщений модуля", func(t *testing.T) {
+	t.Run("Тест 5. Обработчик сообщений модуля", func(t *testing.T) {
 		msgOne, isOpen := <-kafkaApi.GetChanOutput()
 		assert.True(t, isOpen)
 		assert.NotEmpty(t, msgOne.TopicType)
