@@ -88,6 +88,7 @@
 
 ##### messagebrokers - Примеры настройки пакетов для взаимодействия с различными брокерами сообщений
 
-- confluent-kafka-go - пакет для работы с брокером сообщений kafka
+- confluentkafkagopackage - примеры работы с пакетом github.com/confluentinc/confluent-kafka-go/v2 предназначенным для взаимодействия с брокером сообщений kafka
+- kafkagopackage - примеры работы с пакетом github.com/segmentio/kafka-go предназначенным для взаимодействия с брокером сообщений kafka (данный пакет предпочтительнее потому что не требует установки дополнения )
 
 ##### mapmanipulation - примеры работы с картой (Map)

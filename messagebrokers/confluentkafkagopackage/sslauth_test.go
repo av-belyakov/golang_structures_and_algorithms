@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestKafkaSSL(t *testing.T) {
+func TestKafkaSSLAuth(t *testing.T) {
 	var (
 		ac *kafka.AdminClient
 
@@ -24,7 +24,11 @@ func TestKafkaSSL(t *testing.T) {
 			//"bootstrap.servers": "10.0.0.136", //"10.0.0.136:9092"
 			"security.protocol": "ssl",
 			// SSL сертификаты
-			"ssl.ca.location":                     "../kafkaimage/certs/ca.crt",
+			"ssl.ca.location":          "../kafkaimage/certs/ca.crt",
+			"ssl.certificate.location": "../kafkaimage/certs/client-cert",
+			"ssl.key.location":         "../kafkaimage/certs/client-key",
+			"ssl.key.password":         "bVn1-FAvz-j2sa",
+			//		"ssl.key.password":         os.Getenv("KAFKA_SSL_KEY_PASSWORD"),
 			"client.id":                           "go-kafka-ssl-admin-client",
 			"enable.ssl.certificate.verification": false,
 		})
