@@ -1,6 +1,8 @@
 # Инструкция по запуску Kafka с SSL из Docker образа
 
-### Генерация ключей и сертификатов
+## Генерация ключей и сертификатов
+
+---
 
 Заменить в .env файле KAFKA_SSL_KEY_PASSWORD на свой.
 Изменить, при необходимости, ID кластера Kafka, параметр KAFKA_CLUSTER_ID.
@@ -27,7 +29,9 @@
 - если в docker-compose параметр для настройки Kafka KAFKA_CFG_SSL_CLIENT_AUTH: none, то нужен только файл ca.crt;
 - если в docker-compose параметр для настройки Kafka KAFKA_CFG_SSL_CLIENT_AUTH: required, то нужны следующие файлы: ca.crt, client-cert.pem, client-key.pem.
 
-### Запуск контейнеров с Kafka и Kafbat-UI
+## Запуск контейнеров с Kafka и Kafbat-UI
+
+---
 
 Необходимо выполнить:
 
@@ -44,8 +48,11 @@ docker-compose -f docker-compose.sslaut.yml up -d
 ```
 
 если нужны контейнеры с SSL и дополнительной аутентификаций.
+_Старт Kafka сервера может занять некоторое время!_
 
-### Подсказки по работе с SSL сертификатами
+## Подсказки по работе с SSL сертификатами
+
+---
 
 Для того что бы проверить CA (Certificate Authority) выполняем
 
