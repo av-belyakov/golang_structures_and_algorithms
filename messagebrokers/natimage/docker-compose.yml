@@ -1,2 +1,21 @@
-https://habr.com/ru/articles/793050/
-https://docs.nats.io/running-a-nats-service/configuration/monitoring
+#https://habr.com/ru/articles/793050/
+#https://docs.nats.io/running-a-nats-service/configuration/monitoring
+
+services:
+  service:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+     - "4222:4222"
+     - "6222:6222"
+     - "8222:8222"
+    command: "nats-server --config nats-server.conf"
+    #environment:
+    volumes:
+      - $PWD/nats-server.conf:/etc/nats/nats-server.conf:ro
+    networks:
+     - internal-network
+
+networks:
+  internal-network:
+    driver: bridge
