@@ -18,6 +18,9 @@ import (
 
 func TestKafkaConnectionSSL(t *testing.T) {
 	var (
+		conn *kafka.Conn
+		err  error
+
 		topicsName []string = []string{"topic-A0", "topic-A1"}
 		newTopics  []kafka.TopicConfig
 		pathCerts  string = "../kafkaimage/certs/"
@@ -57,11 +60,13 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		},
 	}
 
-	//conn, err := dialer.DialContext(t.Context(), "tcp", "192.168.13.3:9093")
-	conn, err := dialer.DialContext(t.Context(), "tcp", "127.0.0.1:9093")
-	assert.NoError(t, err)
+	t.Run("Тест 0. Соединение с Kafka сервером.", func(t *testing.T) {
+		//conn, err := dialer.DialContext(t.Context(), "tcp", "192.168.13.3:9093")
+		conn, err = dialer.DialContext(t.Context(), "tcp", "127.0.0.1:9093")
+		assert.NoError(t, err)
+	})
 
-	t.Run("Тест 0. Версия API, локальный, удалённый адрес Kafka", func(t *testing.T) {
+	t.Run("Тест 1. Версия API, локальный, удалённый адрес Kafka", func(t *testing.T) {
 		info, err := conn.ApiVersions()
 		assert.NoError(t, err)
 
@@ -74,12 +79,12 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		fmt.Println("Remote IP address:", ip.String())
 	})
 
-	t.Run("Тест 1. Создать новый топик если он не существует.", func(t *testing.T) {
+	t.Run("Тест 2. Создать новый топик если он не существует.", func(t *testing.T) {
 		err := conn.CreateTopics(newTopics...)
 		assert.NoError(t, err)
 	})
 
-	t.Run("Тест 2. Отправить сообщение в топик.", func(t *testing.T) {
+	t.Run("Тест 3. Отправить сообщение в топик.", func(t *testing.T) {
 		w := kafka.Writer{
 			//Addr:     kafka.TCP("192.168.13.3:9093"),
 			Addr:     kafka.TCP("127.0.0.1:9093"),
@@ -109,7 +114,7 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		})
 	})
 
-	t.Run("Тест 3. Принять сообщение из топика.", func(t *testing.T) {
+	t.Run("Тест 4. Принять сообщение из топика.", func(t *testing.T) {
 		r := kafka.NewReader(kafka.ReaderConfig{
 			//Brokers: []string{"192.168.13.3:9093"},
 			Brokers:     []string{"127.0.0.1:9093"},
@@ -118,7 +123,7 @@ func TestKafkaConnectionSSL(t *testing.T) {
 			Dialer:      dialer,
 		})
 
-		t.Run("Тест 3.1. Получить одно сообщение", func(t *testing.T) {
+		t.Run("Тест 4.1. Получить одно сообщение", func(t *testing.T) {
 			// Чтение только одного сообщения
 			msg, err := r.ReadMessage(t.Context())
 			assert.NoError(t, err)
@@ -127,7 +132,7 @@ func TestKafkaConnectionSSL(t *testing.T) {
 			fmt.Printf("Data:'%s'\n", string(msg.Value))
 		})
 
-		t.Run("Тест 3.2. Получить все сообщения", func(t *testing.T) {
+		t.Run("Тест 4.2. Получить все сообщения", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), time.Duration(time.Second*5))
 			// Чтение следующего сообщения в очереди. Блокировка если сообщений
 			// в очереди больше нет.
@@ -157,7 +162,7 @@ func TestKafkaConnectionSSL(t *testing.T) {
 		})
 	})
 
-	t.Run("Тест 4. ", func(t *testing.T) {
+	t.Run("Тест 5. ", func(t *testing.T) {
 
 	})
 
