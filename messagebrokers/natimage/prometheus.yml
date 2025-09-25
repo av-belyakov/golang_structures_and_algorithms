@@ -5,7 +5,17 @@ global:
     monitor: "nats-test-server"
 
 scrape_configs:
-  - job_name: "nats-test-server"
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
 
+  - job_name: "nats-exporter"
     static_configs:
       - targets: ["nats-exporter:7777"]
+    scrape_interval: 10s
+    scrape_timeout: 5s
+#  - job_name: "nats"
+#    static_configs:
+#      - targets: ["nats:8222"]
+#    metrics_path: /varz
+#    scrape_interval: 10s

@@ -60,6 +60,8 @@ services:
     volumes:
       - $PWD/$CERT_DIR/client.keystore.jks:/certs/client.keystore.jks:ro
       - $PWD/$CERT_DIR/kafka.truststore.jks:/certs/client.truststore.jks:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
     depends_on:
       - kafka
 
