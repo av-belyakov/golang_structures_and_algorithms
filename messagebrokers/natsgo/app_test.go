@@ -85,6 +85,10 @@ func TestConnectNats(t *testing.T) {
 		assert.True(t, true, true)
 	})
 
+	t.Run("Тест 3. Передача сообщений с использованием JetStream", func(t *testing.T) {
+
+	})
+
 	/*
 	   t.Run("", func(t *testing.T) {
 
