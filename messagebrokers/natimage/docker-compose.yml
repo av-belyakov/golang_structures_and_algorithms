@@ -10,7 +10,7 @@ services:
     ports:
      - 4222:4222
      - 8222:8222
-     #- 6222:6222
+     #- 6222:6222 //для кластера
     command: "--config nats-server.conf"
     volumes:
       - $PWD/nats-server.conf:/etc/nats/nats-server.conf:ro
@@ -30,9 +30,10 @@ services:
       -D 
       --addr 0.0.0.0 
       --port 7777 
-      -connz 
-      -varz 
-      -subz 
+      -varz
+      -connz
+      -routez
+      -subz
       -jsz=all 
       http://nats-server:8222
     volumes:
@@ -73,6 +74,9 @@ services:
     restart: unless-stopped
     ports:
       - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin  
     volumes:
       - grafana-data:/var/lib/grafana
       - $PWD/grafana/provisioning:/etc/grafana/provisioning

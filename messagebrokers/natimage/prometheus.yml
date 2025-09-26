@@ -14,8 +14,3 @@ scrape_configs:
       - targets: ["nats-exporter:7777"]
     scrape_interval: 10s
     scrape_timeout: 5s
-#  - job_name: "nats"
-#    static_configs:
-#      - targets: ["nats:8222"]
-#    metrics_path: /varz
-#    scrape_interval: 10s
