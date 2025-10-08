@@ -95,3 +95,5 @@
 - natsgo - примеры работы с пакетом github.com/nats-io/nats.go
 
 ##### mapmanipulation - примеры работы с картой (Map)
+
+##### binarysearchalgorithm - алгоритм бинарного поиска
