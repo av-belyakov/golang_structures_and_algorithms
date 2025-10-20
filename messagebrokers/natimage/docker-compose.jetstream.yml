@@ -1,5 +1,3 @@
-#https://habr.com/ru/articles/793050/
-#https://docs.nats.io/running-a-nats-service/configuration/monitoring
 
 services:
   nats:
@@ -13,7 +11,7 @@ services:
      #- 6222:6222 //для кластера
     command: "--config /etc/nats/nats-server.conf"
     volumes:
-      - $PWD/nats-server.conf:/etc/nats/nats-server.conf:ro
+      - $PWD/nats-server-jetstream.conf:/etc/nats/nats-server.conf:ro
       - $PWD/jetstream-cluster/n1:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

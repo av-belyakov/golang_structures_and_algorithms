@@ -1,11 +1,15 @@
-package natsgo
+package natsgo_test
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
+	"strconv"
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,8 +20,8 @@ func TestConnectNats(t *testing.T) {
 		subscribe *nats.Subscription
 		err       error
 
-		host string = "localhost"
-		port int    = 4222
+		host string
+		port int
 
 		answers []string = []string{
 			"It is certain",
@@ -44,6 +48,24 @@ func TestConnectNats(t *testing.T) {
 	)
 
 	chDone := make(chan struct{})
+
+	// Загружаем переменные окружения
+	if err := godotenv.Load(".env"); err != nil {
+		log.Fatalln(err)
+	}
+
+	host = os.Getenv("GO_TEST_NATS_HOST")
+	if host == "" {
+		log.Fatalln("environment 'GO_TEST_NATS_HOST' is not defined")
+	}
+
+	port, err = strconv.Atoi(os.Getenv("GO_TEST_NATS_PORT"))
+	if err != nil {
+		log.Fatalln("environment 'GO_TEST_NATS_PORT' is not defined")
+	}
+	if port == 0 {
+		log.Fatalln("the port cannot be equal to 0")
+	}
 
 	t.Run("Тест 0. Соединение с NATS", func(t *testing.T) {
 		conn, err = nats.Connect(
@@ -76,17 +98,13 @@ func TestConnectNats(t *testing.T) {
 
 			err := conn.Publish(
 				"my-test-subject",
-				fmt.Appendf(nil, "Datetime:'%s', message:'%s''", time.Now().Format(time.RFC3339), answers[rand.Intn(len(answers))]))
+				fmt.Appendf(nil, "datetime:'%s', message:'%s''", time.Now().Format(time.RFC3339), answers[rand.Intn(len(answers))]))
 			assert.NoError(t, err)
 		}
 
 		<-chDone
 
 		assert.True(t, true, true)
-	})
-
-	t.Run("Тест 3. Передача сообщений с использованием JetStream", func(t *testing.T) {
-
 	})
 
 	/*
@@ -99,5 +117,8 @@ func TestConnectNats(t *testing.T) {
 		subscribe.Unsubscribe()
 		conn.Close()
 		close(chDone)
+
+		os.Setenv("GO_TEST_NATS_HOST", "")
+		os.Setenv("GO_TEST_NATS_PORT", "")
 	})
 }
