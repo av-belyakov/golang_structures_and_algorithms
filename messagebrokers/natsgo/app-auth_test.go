@@ -14,9 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConnectNats(t *testing.T) {
+func TestNatsAuth(t *testing.T) {
 	var (
-		conn      *nats.Conn
+		connSubs  *nats.Conn
+		connProd  *nats.Conn
 		subscribe *nats.Subscription
 		err       error
 
@@ -54,11 +55,13 @@ func TestConnectNats(t *testing.T) {
 		log.Fatalln(err)
 	}
 
+	// Получаем имя или адрес хоста
 	host = os.Getenv("GO_TEST_NATS_HOST")
 	if host == "" {
 		log.Fatalln("environment 'GO_TEST_NATS_HOST' is not defined")
 	}
 
+	// Получаем сетевой порт
 	port, err = strconv.Atoi(os.Getenv("GO_TEST_NATS_PORT"))
 	if err != nil {
 		log.Fatalln("environment 'GO_TEST_NATS_PORT' is not defined")
@@ -67,21 +70,46 @@ func TestConnectNats(t *testing.T) {
 		log.Fatalln("the port cannot be equal to 0")
 	}
 
-	t.Run("Тест 0. Соединение с NATS", func(t *testing.T) {
-		conn, err = nats.Connect(
-			fmt.Sprintf("%s:%d", host, port),
-			nats.Name("client for testing"),
-			nats.MaxReconnects(-1),
-			nats.ReconnectWait(3*time.Second),
-			nats.Timeout(3*time.Second))
-		assert.NoError(t, err)
-		assert.NotNil(t, conn)
+	// Получаем пароль потребителя (consumer)
+	consPasswd := os.Getenv("GO_TEST_NATS_CLIENT_PASSWD")
+	if consPasswd == "" {
+		log.Fatalln("environment 'GO_TEST_NATS_CLIENT_PASSWD' is not defined")
+	}
+	// Получаем пароль производителя запросов (producer)
+	prodPasswd := os.Getenv("GO_TEST_NATS_SERVICE_PASSWD")
+	if prodPasswd == "" {
+		log.Fatalln("environment 'GO_TEST_NATS_SERVICE_PASSWD' is not defined")
+	}
+
+	t.Run("Тест 0. Соединения с NATS", func(t *testing.T) {
+		t.Run("Установление соединения для потребителя (consumer)", func(t *testing.T) {
+			connSubs, err = nats.Connect(
+				fmt.Sprintf("%s:%d", host, port),
+				nats.Name("service for testing"),
+				nats.MaxReconnects(-1),
+				nats.ReconnectWait(3*time.Second),
+				nats.Timeout(3*time.Second),
+				nats.UserInfo("service", consPasswd))
+			assert.NoError(t, err)
+			assert.NotNil(t, connSubs)
+		})
+		t.Run("Установление соединения для производителя (producer)", func(t *testing.T) {
+			connProd, err = nats.Connect(
+				fmt.Sprintf("%s:%d", host, port),
+				nats.Name("client for testing"),
+				nats.MaxReconnects(-1),
+				nats.ReconnectWait(3*time.Second),
+				nats.Timeout(3*time.Second),
+				nats.UserInfo("client", prodPasswd))
+			assert.NoError(t, err)
+			assert.NotNil(t, connProd)
+		})
 	})
 
 	t.Run("Тест 1. Получение сообщения", func(t *testing.T) {
 		var count int
 
-		subscribe, err = conn.Subscribe("my-test-subject", func(msg *nats.Msg) {
+		subscribe, err = connSubs.Subscribe("case-message.test", func(msg *nats.Msg) {
 			fmt.Printf("Reseived message:'%s'\n", string(msg.Data))
 
 			count++
@@ -96,8 +124,8 @@ func TestConnectNats(t *testing.T) {
 		for range answers {
 			time.Sleep(time.Millisecond * 300)
 
-			err := conn.Publish(
-				"my-test-subject",
+			err := connProd.Publish(
+				"case-message.test",
 				fmt.Appendf(nil, "datetime:'%s', message:'%s'", time.Now().Format(time.RFC3339), answers[rand.Intn(len(answers))]))
 			assert.NoError(t, err)
 		}
@@ -115,10 +143,13 @@ func TestConnectNats(t *testing.T) {
 
 	t.Cleanup(func() {
 		subscribe.Unsubscribe()
-		conn.Close()
+		connSubs.Close()
+		connProd.Close()
 		close(chDone)
 
 		os.Setenv("GO_TEST_NATS_HOST", "")
 		os.Setenv("GO_TEST_NATS_PORT", "")
+		os.Setenv("GO_TEST_NATS_CLIENT_PASSWD", "")
+		os.Setenv("GO_TEST_NATS_SERVICE_PASSWD", "")
 	})
 }

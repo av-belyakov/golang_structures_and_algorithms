@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConnectNats(t *testing.T) {
+func TestConnectNatsTLS(t *testing.T) {
 	var (
 		conn      *nats.Conn
 		subscribe *nats.Subscription
@@ -68,6 +68,13 @@ func TestConnectNats(t *testing.T) {
 	}
 
 	t.Run("Тест 0. Соединение с NATS", func(t *testing.T) {
+
+		/*
+		 * !!!
+		 * написать пример с соединением по TLS
+		 * !!!
+		 */
+
 		conn, err = nats.Connect(
 			fmt.Sprintf("%s:%d", host, port),
 			nats.Name("client for testing"),

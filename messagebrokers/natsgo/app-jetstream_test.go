@@ -114,7 +114,7 @@ func TestNatsJetStream(t *testing.T) {
 			/*pubAck*/ _, err := js.Publish(
 				ctx,
 				"new_orders.small",
-				fmt.Appendf(nil, "datetime:'%s', message:'%s'', jetStream:'true'", time.Now().Format(time.RFC3339), testMessage[rand.Intn(len(testMessage))]))
+				fmt.Appendf(nil, "datetime:'%s', message:'%s', jetStream:'true'", time.Now().Format(time.RFC3339), testMessage[rand.Intn(len(testMessage))]))
 			assert.NoError(t, err)
 		}
 

@@ -12,15 +12,19 @@ func TestDonationUpdate(t *testing.T) {
 
 	go ListenerDonationUpdate(10, chanData)
 	go ListenerDonationUpdate(15, chanData)
-	// Updater goroutine
+
+	// Обновляющая гороутина
 	go func() {
 		defer close(chanData)
 
-		for i := 0; i < 20; i++ {
+		for range 20 {
 			time.Sleep(time.Second)
 			donation.cond.L.Lock()
 			donation.balance++
 			donation.cond.L.Unlock()
+
+			// если для множества гороутин то использовать Broadcast, а
+			//если ожидающая гороутина только одна то можно использовать Signal
 			donation.cond.Broadcast()
 		}
 	}()
