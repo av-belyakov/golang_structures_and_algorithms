@@ -1,11 +1,12 @@
 package natsgo_test
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -18,10 +19,16 @@ func TestConnectNatsTLS(t *testing.T) {
 	var (
 		conn      *nats.Conn
 		subscribe *nats.Subscription
+		cert      tls.Certificate
 		err       error
 
+		chDone chan struct{} = make(chan struct{})
+
 		host string
-		port int
+		port int = 4443
+
+		clientCert string = "../natimage/certs/client-cert.pem"
+		clientKey  string = "../natimage/certs/client-key.pem"
 
 		answers []string = []string{
 			"It is certain",
@@ -47,8 +54,6 @@ func TestConnectNatsTLS(t *testing.T) {
 		}
 	)
 
-	chDone := make(chan struct{})
-
 	// Загружаем переменные окружения
 	if err := godotenv.Load(".env"); err != nil {
 		log.Fatalln(err)
@@ -59,31 +64,37 @@ func TestConnectNatsTLS(t *testing.T) {
 		log.Fatalln("environment 'GO_TEST_NATS_HOST' is not defined")
 	}
 
-	port, err = strconv.Atoi(os.Getenv("GO_TEST_NATS_PORT"))
+	//получаем корневой сертификат
+	publicCert, err := os.ReadFile("../natimage/certs/rootCA.pem")
 	if err != nil {
-		log.Fatalln("environment 'GO_TEST_NATS_PORT' is not defined")
+		log.Fatalln(err)
 	}
-	if port == 0 {
-		log.Fatalln("the port cannot be equal to 0")
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(publicCert)
+
+	//получаем сертификаты клиента
+	//cert := nats.ClientCert(clientCert, clientKey) //более простая настройка
+	cert, err = tls.LoadX509KeyPair(clientCert, clientKey)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	cfg := &tls.Config{
+		//ServerName:   host,
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+		//MinVersion: 	tls.VersionTLS12,
 	}
 
-	t.Run("Тест 0. Соединение с NATS", func(t *testing.T) {
-
-		/*
-		 * !!!
-		 * написать пример с соединением по TLS
-		 * !!!
-		 */
-
-		conn, err = nats.Connect(
-			fmt.Sprintf("%s:%d", host, port),
-			nats.Name("client for testing"),
-			nats.MaxReconnects(-1),
-			nats.ReconnectWait(3*time.Second),
-			nats.Timeout(3*time.Second))
-		assert.NoError(t, err)
-		assert.NotNil(t, conn)
-	})
+	conn, err = nats.Connect(
+		fmt.Sprintf("tls://%s:%d", host, port),
+		nats.Name("tls client for testing"),
+		nats.MaxReconnects(-1),
+		nats.ReconnectWait(3*time.Second),
+		nats.Timeout(3*time.Second),
+		nats.Secure(cfg))
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	t.Run("Тест 1. Получение сообщения", func(t *testing.T) {
 		var count int
@@ -127,5 +138,7 @@ func TestConnectNatsTLS(t *testing.T) {
 
 		os.Setenv("GO_TEST_NATS_HOST", "")
 		os.Setenv("GO_TEST_NATS_PORT", "")
+		os.Setenv("GO_TEST_NATS_CLIENT_PASSWD", "")
+		os.Setenv("GO_TEST_NATS_SERVICE_PASSWD", "")
 	})
 }

@@ -172,5 +172,10 @@ func TestNatsJetStream(t *testing.T) {
 		subscribe.Unsubscribe()
 		conn.Close()
 		close(chDone)
+
+		os.Setenv("GO_TEST_NATS_HOST", "")
+		os.Setenv("GO_TEST_NATS_PORT", "")
+		os.Setenv("GO_TEST_NATS_CLIENT_PASSWD", "")
+		os.Setenv("GO_TEST_NATS_SERVICE_PASSWD", "")
 	})
 }
