@@ -97,3 +97,5 @@
 ##### mapmanipulation - примеры работы с картой (Map)
 
 ##### binarysearchalgorithm - алгоритм бинарного поиска
+
+##### zabbixintegration - примеры работы с пакетом обеспечивающим интеграцию с Zabbix
