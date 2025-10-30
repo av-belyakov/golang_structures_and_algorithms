@@ -1,0 +1,4 @@
+certs/*
+nginx/*
+zabbix/*
+postgresql/*
