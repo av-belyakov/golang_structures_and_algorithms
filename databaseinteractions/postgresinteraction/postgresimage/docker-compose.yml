@@ -1,0 +1,32 @@
+services:
+  postgres:       
+    image: postgres:17   
+    container_name: postgres
+    env_file:
+      .env
+    restart: unless-stopped
+    networks:
+      - docker-network
+    ports:
+      - 5432:5432
+    logging:
+      options:
+        max-size: "100m"
+        max-file: "5"
+    command: >     
+      postgres
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/certs/server-cert.pem
+      -c ssl_key_file=/var/lib/postgresql/certs/server-key.pem
+      -c ssl_ca_file=/var/lib/postgresql/certs/rootCA.pem
+    volumes:
+      - $PWD/postgres/data:/var/lib/postgresql/data:rw
+      - $PWD/certs/rootCA.pem:/var/lib/postgresql/certs/rootCA.pem:ro
+      - $PWD/certs/server-key.pem:/var/lib/postgresql/certs/server-key.pem:ro
+      - $PWD/certs/server-cert.pem:/var/lib/postgresql/certs/server-cert.pem:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+networks:
+  docker-network:
+    driver: bridge
