@@ -2,9 +2,9 @@ services:
   postgres:       
     image: postgres:17   
     container_name: postgres
+    restart: unless-stopped
     env_file:
       .env
-    restart: unless-stopped
     networks:
       - docker-network
     ports:

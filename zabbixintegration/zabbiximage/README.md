@@ -1,17 +1,27 @@
-# Zabbix Image
+# Zabbix image
 
-### Порядок разворачивания контейнеров с zabbix-server, zabbix-web, zabbix-agent и postgres СУБД
+## Порядок разворачивания контейнеров с zabbix-server, zabbix-web, zabbix-agent и postgres СУБД
 
-Для того что бы создать TLS сертификаты, выполнть:
+### СУБД Postgres
+
+Что бы развернуть сервер СУБД Postgres с использованием TLS необходимо сначало сгенерировать ключи и сертификаты для сервера, для этого выполняем скрипт _postgres-certsgen.sh_ от имени root, так как на ряду с созданием сертификато данный скрипт ещё выполняет изменение пользователя-владельца для некоторых файлов.
 
 ```bash
-./gencerts.sh
+sudo ./postgres-certsgen.sh
 ```
 
 После этого появится директория _certs_ с TLS сертификатами и ключами для сервера и клиентов.
 
-Выполнить команду:
+### Разворачивание всей инфраструктуры
+
+Выполнить:
 
 ```bash
-docker-compose up -d
+docker compose up -d
+```
+
+Красиво вывести список контейнеров:
+
+```bash
+docker ps --format 'table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.RunningFor}}\t{{.Status}}'
 ```

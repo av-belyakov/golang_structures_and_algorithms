@@ -1,187 +1,194 @@
 services:
-  zabbix-server:                                                                  # контейнер Zabbix Server
-    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest                                                # параметр для скачивания образа zabbix sever с gitlab.cloud.gcm
-    container_name: zabbix-server                                                 # параметр "имя контейнера" 
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-7.4-latest
+    container_name: zabbix-server
+    restart: unless-stopped 
     env_file:
       .env
-    environment:                                                                  # парметр конфигурации (в этом случае zabbix-server.conf)
-      - POSTGRES_DB=$POSTGRES_DB                                     # пармаетр для подключения к БД - имя базы данных
-      - POSTGRES_USER=$POSTGRES_USER                                        # пармаетр для подключения к БД - имя пользователя 
-      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD                                    # пармаетр для подключения к БД - пароль пользователя 
-      - DB_SERVER_PORT=$POSTGRES_PORT
-      - ZBX_HISTORYSTORAGETYPES=log,text                                          # параметр для вывода логов в докере (docker logs 'container-name')
-      - ZBX_DEBUGLEVEL=3                                                          # переменная используется для указания уровня отладки
-      - ZBX_HOUSEKEEPINGFREQUENCY=1                                               # автоматическая очистка БД удаляет за один цикл не более чем 4 часа устаревшей истории.
-      - ZBX_MAXHOUSEKEEPERDELETE=5000                                             # параметр для удаления данных истории и динамики изменений уже удаленных элементов данных.
-      - ZBX_CACHESIZE=3G                                                          # параметр размера кэша конфигурации
-      - ZBX_HISTORYCACHESIZE=2G                                                   # параметр размера кэша истории
-      - ZBX_VALUECACHESIZE=3G                                                     # параметр размера кэша для хранения истории
-      - ZBX_STARTPOLLERS=1000                                                     # параметр количества экземпляров опросников
-      - ZBX_STARTALERTERS=30
+    environment:
+#      - POSTGRES_DB=$POSTGRES_DB # имя базы данных 
+#      - POSTGRES_USER=$POSTGRES_USER # имя пользователя
+#      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD # пароль пользователя
+      - DB_SERVER_HOST=postgres # имя хоста сервера БД 
+      - DB_SERVER_PORT=$POSTGRES_PORT # порт
+      # TLS
+      #- ZBX_DBTLSCONNECT=required
+      - ZBX_DBTLSCAFILE=/etc/zabbix/certs/rootCA.pem
+      #- ZBX_DBTLSKEYFILE=/etc/zabbix/certs/client-key.pem
+      #- ZBX_DBTLSCERTFILE=/etc/zabbix/certs/client-cert.pem
+      #- ZBX_DBTLSCIPHER=ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256
+      - ZBX_HISTORYSTORAGETYPES=log,text # вывод логов в докере (docker logs 'container-name')
+      - ZBX_DEBUGLEVEL=3 # уровень отладки
+      - ZBX_HOUSEKEEPINGFREQUENCY=1 # автоматическая очистка БД удаляет за один цикл не более чем 4 часа устаревшей истории.
+      - ZBX_MAXHOUSEKEEPERDELETE=5000 # удаление данных истории и динамики изменений уже удаленных элементов данных.
+      - ZBX_CACHESIZE=3G # размер кэша конфигурации
+      - ZBX_HISTORYCACHESIZE=2G # размер кэша истории
+      - ZBX_VALUECACHESIZE=3G # размер кэша для хранения истории
+      - ZBX_STARTPOLLERS=1000 # количество экземпляров опросников
+      - ZBX_STARTALERTERS=30 
       - ZBX_STARTPOLLERSUNreachable=50
       - ZBX_STARTTRAPPERS=30
       - ZBX_CACHEUPDATEFREQUENCY=300
       - ZBX_STARTDBSYNCERS=20
       - ZBX_TRENDCACHESIZE=256M
-      - ZBX_STARTDISCOVERERS=20                                                   # параметр количества экземпляров автообнаружения
-      - ZBX_LOGSLOWQUERIES=3000                                                   # параметр "как долго могут выполняться запросы в БД до того как они запишутся в журнал"
-      - ZBX_STARTHTTPPOLLERS=40                                                   # количество экземпляров HTTP опросников.
+      - ZBX_STARTDISCOVERERS=20 # количество экземпляров автообнаружения
+      - ZBX_LOGSLOWQUERIES=3000 # параметр "как долго могут выполняться запросы в БД до того как они запишутся в журнал"
+      - ZBX_STARTHTTPPOLLERS=40 # количество экземпляров HTTP опросников.
       - ZBX_STARTPINGERS=20
       - ZBX_MAXHOUSEKEEPERDELETE=750000
       - ZBX_STARTPROXYPOLLERS=12
       - ZBX_PROXYCONFIGFREQUENCY=12
       - ZBX_PROXYDATAFREQUENCY=1  
-    ports:                                                                        # параметр для проброса портов (внешний:внутренний)     
-      - $PORT_ZABBIX_SERVER:10050                                           # внешний:внутренний (контейнера), прошу обратить внгиание на 10053 - порт Zabbix Server
-    volumes:                                                                      # параметр для монтирования тома (хост:контейнер)
-      - $PWD/zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro              # том используется для пользовательских сценариев предупреждений
-      - $PWD/zabbix/externalscripts:/usr/lib/zabbix/externalscripts:ro        # том используется для внешних проверок 
-      - $PWD/zabbix/export:/var/lib/zabbix/export:rw                          # каталог для экспорта событий, истории и тенденций в режиме реального времени в формате JSON
-      - $PWD/zabbix/modules:/var/lib/zabbix/modules:ro                        # том используется для загрузки доп. модулей и расширений Zabbix Server
-      - $PWD/zabbix/enc:/var/lib/zabbix/enc:ro                                # том используется для хранения файлов, связанных с TLS
-      - $PWD/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro                      # том используется для хранения открытых и закрытых ключей SSH
-      - $PWD/zabbix/mibs:/var/lib/zabbix/mibs:ro                              # том позволяет добавлять новые файлы MIB.
-      - $PWD/zabbix/snmptraps:/var/lib/zabbix/snmptraps:ro                    # том используется как местонахождение snmptraps.log файла
-      - /etc/timezone:/etc/timezone:ro                                            # том с временной зоной
-      - /etc/localtime:/etc/localtime:ro                                          # том с локальным временем
-    logging:                                                                      # параметр для настройки Логов
-      options:                                                                    # опции дял настройки логов
-        max-size: "100m"                                                          # максимальный размер логов
-        max-file: "3"                                                             # максимальное количество лог-файлов
-    restart: always                                                               # параметр для перезапуска контейнера в случае сбоя
-    depends_on:                                                                   # выражает зависимости запуска и завершения работы между службами
-      - postgres                                                           # zabbix-server не запустится без postgres-server       
-    networks:                                                                     # сеть для настройки iptables
-      - zbx_network                                                                   # имя сети для настройки iptables
+    ports:      
+      - $PORT_ZABBIX_SERVER:10050 # внешний:внутренний
+    logging: 
+      options: 
+        max-size: "100m" 
+    volumes: 
+      - $PWD/zabbix/alertscripts:/usr/lib/zabbix/alertscripts:ro 
+      - $PWD/zabbix/externalscripts:/usr/lib/zabbix/externalscripts:ro 
+      - $PWD/zabbix/export:/var/lib/zabbix/export:rw 
+      - $PWD/zabbix/modules:/var/lib/zabbix/modules:ro 
+      - $PWD/zabbix/enc:/var/lib/zabbix/enc:ro 
+      - $PWD/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro 
+      - $PWD/zabbix/mibs:/var/lib/zabbix/mibs:ro 
+      - $PWD/zabbix/snmptraps:/var/lib/zabbix/snmptraps:ro
+      #- $PWD/certs/rootCA.pem:/etc/zabbix/certs/rootCA.pem:ro
+      #- $PWD/certs/client-key.pem:/etc/zabbix/certs/client-key.pem:ro
+      #- $PWD/certs/client-cert.pem:/etc/zabbix/certs/client-cert.pem:ro 
+      - $PWD/certs/postgresql/ca.crt:/etc/zabbix/certs/rootCA.pem:ro
+      #- $PWD/zabbix/certs/client.key:/etc/zabbix/certs/client-key.pem:ro
+      #- $PWD/zabbix/certs/client.crt:/etc/zabbix/certs/client-cert.pem:ro 
+      - /etc/timezone:/etc/timezone:ro 
+      - /etc/localtime:/etc/localtime:ro
+    depends_on: 
+      - postgres        
+    networks: 
+      - zbx_network 
 
-  web-nginx-pgsql:                                                                # котейнер с вебинтерфейсом для Zabbix Server (nginx,pgsql)
-    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.4-latest                                      # параметр для скачивания образа с gitlab.cloud.gcm
-    container_name: web-server                                 # имя контейнера
+  web-nginx-pgsql: 
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-7.4-latest 
+    container_name: web-server
+    restart: unless-stopped
     env_file:
       .env
-    ports:                                                                        # проброс портов внешний:внутренний
-      - 80:8080                                                                   # для тех кто устанавливает проект на КУ, прошу обратить внимание на внешний порт(80)
-      - 443:8443                                                                  # для тех кто устанавливает проект на КУ, прошу обратить внимание на внешний порт(443)
-    volumes:                                                                      # параметр для монтирования тома (хост:контейнер)
-      - $PWD/nginx:/etc/ssl/nginx:ro                                          # том, позволяющий включить HTTPS для веб-интерфейса Zabbix
-      - $PWD/zabbix/modules/:/usr/share/zabbix/modules/:ro                  # каталог модуля из вашей установки Zabbix Frontend
-      - $PWD/img/icon-sprite.svg:/usr/share/zabbix/assets/img/icon-sprite.svg:ro                   # том с картинками для web-интерфейса
-      - /etc/timezone:/etc/timezone:ro                                            # том с локальной временной зоной
-      - /etc/localtime:/etc/localtime:ro                                          # том с локальным временем
-    healthcheck:                                                                  # проверка состояния/работоспособности
+    environment:
+#      - POSTGRES_DB=$POSTGRES_DB
+#      - POSTGRES_USER=$POSTGRES_USER 
+#      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - DB_SERVER_PORT=$POSTGRES_PORT
+      - ZBX_SERVER_HOST=zabbix-server # IP- или DNS-имя Zabbix-сервера
+      - ZBX_POSTMAXSIZE=64M # ограничение всего тела запроса, которое может включать несколько файлов
+      - ZBX_MAXEXECUTIONTIME=500 # max_execution_time опция PHP
+      - ZBX_DEBUGLEVEL=3 # уровнень отладки  
+    ports: 
+      - 80:8080
+      - 443:8443
+    healthcheck: 
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
-    sysctls:                                                                      # определяет параметры ядра для установки в контейнере
-      - net.core.somaxconn=65535                                                  # размер очереди прослушивания
-    restart: always                                                               # параметр для перезапуска контейнера в случае сбоя
-    logging:                                                                      # параметр для настройки Логов
-      options:                                                                    # опции дял настройки логов
-        max-size: "100m"                                                          # максимальный размер логов
-        max-file: "5"                                                             # максимальное количество лог-файлов
-    depends_on:                                                                   # выражает зависимости запуска и завершения работы между службами.
-      - zabbix-server                                                             # web-nginx-pgsql не запустится без zabbix-server
-      - postgres                                                           # web-nginx-pgsql не запустится без postgres-server
-    environment:                                                                  # парметр конфигурации
-      - POSTGRES_DB=$POSTGRES_DB                                     # имя базы данных POSTGRES
-      - POSTGRES_USER=$POSTGRES_USER                                        # имя пользователя базы данных POSTGRES 
-      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD                                    # пароль пользователя базы данных POSTGRES
-      - DB_SERVER_PORT=$POSTGRES_PORT
-      - ZBX_SERVER_HOST=zabbix-server                                             # переменная представляет собой IP- или DNS-имя Zabbix-сервера
-      - ZBX_POSTMAXSIZE=64M                                                       # переменная ограничение всего тела запроса, которое может включать несколько файлов
-      - ZBX_MAXEXECUTIONTIME=500                                                  # переменная является max_execution_time опцией PHP
-      - ZBX_DEBUGLEVEL=3                                                          # переменная используется для указания уровня отладки
-    networks:                                                                     # сеть для настройки iptables
-      - zbx_network                                                                   # имя сети для настройки iptables
+    sysctls:
+      - net.core.somaxconn=65535
+    logging:
+      options:
+        max-size: "100m"
+        max-file: "5"
+    volumes:
+      - $PWD/nginx:/etc/ssl/nginx:ro
+      - $PWD/zabbix/modules/:/usr/share/zabbix/modules/:ro
+      - $PWD/img/icon-sprite.svg:/usr/share/zabbix/assets/img/icon-sprite.svg:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro  
+    depends_on:
+      - zabbix-server
+      - postgres
+    networks: 
+      - zbx_network
 
-  zabbix-server-agent:                                                           # контейнер с Zabbix Agent2 (для мониторинга Zabbix Server) 
-    image: zabbix/zabbix-agent:alpine-7.4-latest                                                # параметр для скачивания образа с gitlab.cloud.gcm
-    container_name: zabbix-agent                                         # имя контейнера (необходимо изменить в файле .env в соттветсвии с таблицей см. п.п. 1.3 в Инструкции)
-    volumes:                                                                      # параметр для монтирования тома (хост:контейнер)
+  zabbix-server-agent: 
+    image: zabbix/zabbix-agent:alpine-7.4-latest
+    container_name: zabbix-agent
+    restart: unless-stopped   
+    environment: 
+      - ZBX_DEBUGLEVEL=3 # уровнень отладки        
+      - ZBX_SERVER_HOST=proxy-rcm, zabbix-server # IP- или DNS-имя сервера Zabbix и прокси-сервера Zabbix.                    
+    user: 0:0
+    privileged: true # параметр, который предоставляет расширенные права этому контейнеру  
+    pid: "host" # параметр, который позволяет процессу-контейнеру видеть все остальные процессы, запущенные на хосте
+    logging: 
+      options:
+        max-size: "100m"
+        max-file: "5"
+    depends_on:
+      - zabbix-server   
+#        - proxy-rcm 
+    volumes:
       - /proc:/proc                                                          
       - /sys:/sys                                                           
       - /dev:/dev                                                             
-      - /etc/timezone:/etc/timezone:ro                                            # том с временной зоной                      
-      - /etc/localtime:/etc/localtime:ro                                          # том с локальным временем                        
-#        - /var/run/docker.sock:/var/run/docker.sock:ro                             # ТАК делать категорически запрещено! 
-    user: 0:0
-    privileged: true                                                              # параметр, который предоставляет расширенные права этому контейнеру  
-    pid: "host"                                                                   # параметр, который позволяет процессу-контейнеру видеть все остальные процессы, запущенные на хосте
-    restart: always                                                               # параметр для перезапуска контейнера в случае сбоя  
-    logging:                                                                      # параметр для настройки логгирования
-      options:                                                                    # опции для настройки логов
-        max-size: "100m"                                                          # максимальный размер логов
-        max-file: "5"                                                             # максимальное количество лог-файлов
-    depends_on:                                                                   # выражает зависимости запуска и завершения работы между службами
-      - zabbix-server                                                             # web-nginx-pgsql не запустится без zabbix-server   
-#        - proxy-rcm                                                                 # web-nginx-pgsql не запустится без zabbix-proxy
-    environment:                                                                  # парметр конфигурации
-      - ZBX_DEBUGLEVEL=3                                                          # переменная используется для указания уровня отладки        
-      - ZBX_SERVER_HOST=proxy-rcm, zabbix-server                                  # переменная представляет собой IP- или DNS-имя сервера Zabbix и прокси-сервера Zabbix.                    
-    networks:                                                                     # сеть для настройки iptables
-      - zbx_network                                                                   # имя сети для настройки iptables
-  postgres:                                                                # контейнер с БД для Zabbix Server       
-    image: postgres:latest                                                   # параметр для скачивания образа с gitlab.cloud.gcm         
-    container_name: postgres
-    env_file:
-      .env                                 # имя контейнера                            
-    restart: unless-stopped
-    ports:
-      - 5432:5432                                                               # параметр для перезапуска контейнера в случае сбоя 
-    logging:                                                                      # параметр для настройки Логов
-      options:                                                                    # опции дял настройки логов
-        max-size: "100m"                                                          # максимальный размер логов
-        max-file: "5"                                                             # максимальное количество лог-файлов
-      #command: |
-      #    postgres
-      #    -c ssl=on
-      #    -c ssl_cert_file=/var/lib/postgresql/certs/server.crt
-      #    -c ssl_key_file=/var/lib/postgresql/certs/server.key
-      #    -c ssl_ca_file=/var/lib/postgresql/certs/ca.crt
-    volumes:                                                                      # параметр для монтирования тома (хост:контейнер)
-      - $PWD/postgresql/data:/var/lib/postgresql/data:rw                      # том где PostgreSQL хранит базу данных
-      - $PWD/certs/rootCA.pem:/run/secrets/root-ca.pem:ro
-      - $PWD/certs/server-key.pem:/run/secrets/server-key.pem:ro
-      - $PWD/certs/server-cert.pem:/run/secrets/server-cert.pem:ro
-      - /etc/timezone:/etc/timezone:ro                                            # том с локальной временной зоной                       
-      - /etc/localtime:/etc/localtime:ro                                          # том с локальным временем                          
-    environment:
-      - POSTGRES_DB=$POSTGRES_DB                                     # имя базы данных POSTGRES                  
-      - POSTGRES_USER=$POSTGRES_USER                                        # имя пользователя базы данных POSTGRES
-      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD                                    # пароль пользователя базы данных POSTGRES            
-    healthcheck:                                                                  # проверка состояния/работоспособности
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]  # исрпавлена ошибка в логах БД (role "root" does not exist)
-      interval: 10s                                                            
-      timeout: 5s                                                            
-      retries: 5                                                            
-    networks:                                                                     # сеть для настройки iptables
-      - zbx_network                                                                   # имя сети для настройки iptables
+      - /etc/timezone:/etc/timezone:ro                 
+      - /etc/localtime:/etc/localtime:ro                  
+#     - /var/run/docker.sock:/var/run/docker.sock:ro # ТАК делать категорически запрещено! 
+    networks:
+      - zbx_network
 
-#    snmptraps:                                                                      # контейнер для получения трапов по протоколу snmp (телеметрия с коммуттаторов и т.п.)
-#      image: ${IMAGES_ZSNMPTRAPS}                                                   # параметр для скачивания образа с gitlab.cloud.gcm
-#      container_name: zabbix-server-snmptraps                                       # имя контейнера                             
-#      ports:                                                                        # параметр для проброса портов  
-#        - "162:1162/udp"                                                            # внешний порт:внутренний (контейнера)        
-#      volumes:                                                                      # параметр для монтирования тома (хост:контейнер)
-#        - /var/lib/zabbix/snmptraps:/var/lib/zabbix/snmptraps:rw                    # том содержит файл журнала snmptraps.log с именем полученных SNMP traps                                              
-#        - /etc/localtime:/etc/localtime:ro                                          # том с локальным временем                       
-#        - /etc/timezone:/etc/timezone:ro                                            # том с локальной временной зоной                     
-#      restart: always                                                               # параметр для перезапуска контейнера в случае сбоя  
-#      depends_on:                                                                   # выражает зависимости запуска и завершения работы между службами
-#        - zabbix-server                                                             # контейнер snmptraps не запустится пока контейнер zabbix-server     
-#      environment:                                                                  # парметр конфигурации
-#        - ZBX_SERVER_HOST=zabbix-server                                             # переменная представляет собой IP- или DNS-имя Zabbix-сервера
-#      networks:                                                                     # сеть для настройки iptables
-#        - zbx_network                                                                   # имя сети для настройки iptables
+  postgres:       
+    image: postgres:17   
+    container_name: postgres
+    restart: unless-stopped
+    env_file:
+      .env
+    ports:
+      - $POSTGRES_PORT:5432
+    logging:
+      options:
+        max-size: "100m"
+        max-file: "5"
+    command: >     
+      postgres
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/certs/server-cert.pem
+      -c ssl_key_file=/var/lib/postgresql/certs/server-key.pem  
+    #  -c ssl_ca_file=/var/lib/postgresql/certs/rootCA.pem
+    volumes:
+      - $PWD/postgres/data:/var/lib/postgresql/data:rw
+      #- $PWD/certs/rootCA.pem:/var/lib/postgresql/certs/rootCA.pem:ro
+      #- $PWD/certs/server-key.pem:/var/lib/postgresql/certs/server-key.pem:ro
+      #- $PWD/certs/server-cert.pem:/var/lib/postgresql/certs/server-cert.pem:ro      
+      #- $PWD/certs/postgresql/ca.crt:/var/lib/postgresql/certs/rootCA.pem:ro
+      - $PWD/certs/postgresql/server.key:/var/lib/postgresql/certs/server-key.pem:ro
+      - $PWD/certs/postgresql/server.crt:/var/lib/postgresql/certs/server-cert.pem:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro       
+    networks:
+      - zbx_network
+
+#    snmptraps: # контейнер для получения трапов по протоколу snmp (телеметрия с коммуттаторов и т.п.)
+#      image: ${IMAGES_ZSNMPTRAPS}
+#      container_name: zabbix-server-snmptraps                             
+#      ports:  
+#        - "162:1162/udp"        
+#      volumes:
+#        - /var/lib/zabbix/snmptraps:/var/lib/zabbix/snmptraps:rw
+#        - /etc/localtime:/etc/localtime:ro
+#        - /etc/timezone:/etc/timezone:ro
+#      restart: unless-stopped 
+#      depends_on:
+#        - zabbix-server
+#      environment:
+#        - ZBX_SERVER_HOST=zabbix-server
+#      networks:
+#        - zbx_network
 
 networks:
   zbx_network:
     driver: bridge
     driver_opts:
       com.docker.network.enable_ipv6: "false"
-      com.docker.network.bridge.name: "docker_zabbix"
+      com.docker.network.bridge.name: docker_zabbix
     ipam:
       driver: default
       config:
