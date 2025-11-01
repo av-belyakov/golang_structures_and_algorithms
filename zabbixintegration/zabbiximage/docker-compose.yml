@@ -6,39 +6,36 @@ services:
     env_file:
       .env
     environment:
-#      - POSTGRES_DB=$POSTGRES_DB # имя базы данных 
-#      - POSTGRES_USER=$POSTGRES_USER # имя пользователя
-#      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD # пароль пользователя
       - DB_SERVER_HOST=postgres # имя хоста сервера БД 
       - DB_SERVER_PORT=$POSTGRES_PORT # порт
       # TLS
-      #- ZBX_DBTLSCONNECT=required
+      - ZBX_DBTLSCONNECT=verify_ca
       - ZBX_DBTLSCAFILE=/etc/zabbix/certs/rootCA.pem
       #- ZBX_DBTLSKEYFILE=/etc/zabbix/certs/client-key.pem
       #- ZBX_DBTLSCERTFILE=/etc/zabbix/certs/client-cert.pem
       #- ZBX_DBTLSCIPHER=ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256
       - ZBX_HISTORYSTORAGETYPES=log,text # вывод логов в докере (docker logs 'container-name')
       - ZBX_DEBUGLEVEL=3 # уровень отладки
-      - ZBX_HOUSEKEEPINGFREQUENCY=1 # автоматическая очистка БД удаляет за один цикл не более чем 4 часа устаревшей истории.
-      - ZBX_MAXHOUSEKEEPERDELETE=5000 # удаление данных истории и динамики изменений уже удаленных элементов данных.
+      #- ZBX_HOUSEKEEPINGFREQUENCY=1 # автоматическая очистка БД удаляет за один цикл не более чем 4 часа устаревшей истории.
+      #- ZBX_MAXHOUSEKEEPERDELETE=5000 # удаление данных истории и динамики изменений уже удаленных элементов данных.
       - ZBX_CACHESIZE=3G # размер кэша конфигурации
       - ZBX_HISTORYCACHESIZE=2G # размер кэша истории
       - ZBX_VALUECACHESIZE=3G # размер кэша для хранения истории
-      - ZBX_STARTPOLLERS=1000 # количество экземпляров опросников
-      - ZBX_STARTALERTERS=30 
-      - ZBX_STARTPOLLERSUNreachable=50
-      - ZBX_STARTTRAPPERS=30
-      - ZBX_CACHEUPDATEFREQUENCY=300
-      - ZBX_STARTDBSYNCERS=20
-      - ZBX_TRENDCACHESIZE=256M
-      - ZBX_STARTDISCOVERERS=20 # количество экземпляров автообнаружения
-      - ZBX_LOGSLOWQUERIES=3000 # параметр "как долго могут выполняться запросы в БД до того как они запишутся в журнал"
-      - ZBX_STARTHTTPPOLLERS=40 # количество экземпляров HTTP опросников.
-      - ZBX_STARTPINGERS=20
-      - ZBX_MAXHOUSEKEEPERDELETE=750000
-      - ZBX_STARTPROXYPOLLERS=12
-      - ZBX_PROXYCONFIGFREQUENCY=12
-      - ZBX_PROXYDATAFREQUENCY=1  
+      #- ZBX_STARTPOLLERS=1000 # количество экземпляров опросников
+      #- ZBX_STARTALERTERS=30 
+      #- ZBX_STARTPOLLERSUNreachable=50
+      #- ZBX_STARTTRAPPERS=30
+      #- ZBX_CACHEUPDATEFREQUENCY=300
+      #- ZBX_STARTDBSYNCERS=20
+      #- ZBX_TRENDCACHESIZE=256M
+      #- ZBX_STARTDISCOVERERS=20 # количество экземпляров автообнаружения
+      #- ZBX_LOGSLOWQUERIES=3000 # параметр "как долго могут выполняться запросы в БД до того как они запишутся в журнал"
+      #- ZBX_STARTHTTPPOLLERS=40 # количество экземпляров HTTP опросников.
+      #- ZBX_STARTPINGERS=20
+      #- ZBX_MAXHOUSEKEEPERDELETE=750000
+      #- ZBX_STARTPROXYPOLLERS=12
+      #- ZBX_PROXYCONFIGFREQUENCY=12
+      #- ZBX_PROXYDATAFREQUENCY=1  
     ports:      
       - $PORT_ZABBIX_SERVER:10050 # внешний:внутренний
     logging: 
@@ -53,12 +50,12 @@ services:
       - $PWD/zabbix/ssh_keys:/var/lib/zabbix/ssh_keys:ro 
       - $PWD/zabbix/mibs:/var/lib/zabbix/mibs:ro 
       - $PWD/zabbix/snmptraps:/var/lib/zabbix/snmptraps:ro
-      #- $PWD/certs/rootCA.pem:/etc/zabbix/certs/rootCA.pem:ro
+      - $PWD/certs/rootCA.pem:/etc/zabbix/certs/rootCA.pem:ro
       #- $PWD/certs/client-key.pem:/etc/zabbix/certs/client-key.pem:ro
       #- $PWD/certs/client-cert.pem:/etc/zabbix/certs/client-cert.pem:ro 
-      - $PWD/certs/postgresql/ca.crt:/etc/zabbix/certs/rootCA.pem:ro
-      #- $PWD/zabbix/certs/client.key:/etc/zabbix/certs/client-key.pem:ro
-      #- $PWD/zabbix/certs/client.crt:/etc/zabbix/certs/client-cert.pem:ro 
+      #- $PWD/certs/zabbix/ca.crt:/etc/zabbix/certs/rootCA.pem:ro
+      #- $PWD/certs/zabbix/client.key:/etc/zabbix/certs/client-key.pem:ro
+      #- $PWD/certs/zabbix/client.crt:/etc/zabbix/certs/client-cert.pem:ro 
       - /etc/timezone:/etc/timezone:ro 
       - /etc/localtime:/etc/localtime:ro
     depends_on: 
@@ -73,25 +70,33 @@ services:
     env_file:
       .env
     environment:
-#      - POSTGRES_DB=$POSTGRES_DB
-#      - POSTGRES_USER=$POSTGRES_USER 
-#      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      # https://hub.docker.com/r/zabbix/zabbix-web-nginx-pgsql   
+      #- POSTGRES_DB=$POSTGRES_DB
+      #- POSTGRES_USER=$POSTGRES_USER 
+      #- POSTGRES_PASSWORD=$POSTGRES_PASSWORD
       - DB_SERVER_PORT=$POSTGRES_PORT
+      - DB_SERVER_HOST=postgres
+      - DB_TLS_CONNECT=true
+      - DB_TLS_CA_FILE=/etc/zabbix/web/certs/ca.crt
+      #- DB_TLS_CERT_FILE=/etc/zabbix/web/certs/client.crt
+      #- DB_TLS_KEY_FILE=/etc/zabbix/web/certs/client.key
+      #- DB_TLS_CIPHERS=ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256
+      - ZBX_SERVER_NAME="Zabbix Monitoring Test Implementation"
       - ZBX_SERVER_HOST=zabbix-server # IP- или DNS-имя Zabbix-сервера
       - ZBX_POSTMAXSIZE=64M # ограничение всего тела запроса, которое может включать несколько файлов
-      - ZBX_MAXEXECUTIONTIME=500 # max_execution_time опция PHP
+      #- ZBX_MAXEXECUTIONTIME=500 # max_execution_time опция PHP
       - ZBX_DEBUGLEVEL=3 # уровнень отладки  
     ports: 
-      - 80:8080
-      - 443:8443
+      - 8282:8080
+      - 8443:443
     healthcheck: 
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 30s
-    sysctls:
-      - net.core.somaxconn=65535
+    #sysctls:
+    #  - net.core.somaxconn=65535
     logging:
       options:
         max-size: "100m"
@@ -100,6 +105,7 @@ services:
       - $PWD/nginx:/etc/ssl/nginx:ro
       - $PWD/zabbix/modules/:/usr/share/zabbix/modules/:ro
       - $PWD/img/icon-sprite.svg:/usr/share/zabbix/assets/img/icon-sprite.svg:ro
+      - $PWD/certs/rootCA.pem:/etc/zabbix/web/certs/ca.crt:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro  
     depends_on:
@@ -156,11 +162,11 @@ services:
     volumes:
       - $PWD/postgres/data:/var/lib/postgresql/data:rw
       #- $PWD/certs/rootCA.pem:/var/lib/postgresql/certs/rootCA.pem:ro
-      #- $PWD/certs/server-key.pem:/var/lib/postgresql/certs/server-key.pem:ro
-      #- $PWD/certs/server-cert.pem:/var/lib/postgresql/certs/server-cert.pem:ro      
+      - $PWD/certs/server-key.pem:/var/lib/postgresql/certs/server-key.pem:ro
+      - $PWD/certs/server-cert.pem:/var/lib/postgresql/certs/server-cert.pem:ro      
       #- $PWD/certs/postgresql/ca.crt:/var/lib/postgresql/certs/rootCA.pem:ro
-      - $PWD/certs/postgresql/server.key:/var/lib/postgresql/certs/server-key.pem:ro
-      - $PWD/certs/postgresql/server.crt:/var/lib/postgresql/certs/server-cert.pem:ro
+      #- $PWD/certs/postgresql/server.key:/var/lib/postgresql/certs/server-key.pem:ro
+      #- $PWD/certs/postgresql/server.crt:/var/lib/postgresql/certs/server-cert.pem:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro       
     networks:
@@ -186,13 +192,13 @@ services:
 networks:
   zbx_network:
     driver: bridge
-    driver_opts:
-      com.docker.network.enable_ipv6: "false"
-      com.docker.network.bridge.name: docker_zabbix
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.31.17.0/28
+#    driver_opts:
+#      com.docker.network.enable_ipv6: "false"
+#      com.docker.network.bridge.name: docker_zabbix
+#    ipam:
+#      driver: default
+#      config:
+#        - subnet: 172.31.17.0/28
 
 volumes:
   postgres:
