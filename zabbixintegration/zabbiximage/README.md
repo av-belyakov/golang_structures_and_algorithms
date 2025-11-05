@@ -29,4 +29,4 @@ docker ps --format 'table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.RunningFor}}\t{{.S
 
 Для некоторых действия с API необходимы повышенные привилегии пользователя вплодь до супер-пользователя. К таким дейсвиям относятся 'hostgroup.create', 'host.create', 'hostgroup.delete', 'host.delete', и т.д. При этом даже права супер-пользователя для работы с API несколько ограничены. Что бы расширить их необходимо явно добавить необходимые действия.
 
-[пример настройки роли](/zabbixintegration/zabbiximage/img/image1.png)
+![пример настройки роли](/zabbixintegration/zabbiximage/img/image1.png)
