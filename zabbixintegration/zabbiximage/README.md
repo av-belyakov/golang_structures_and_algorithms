@@ -1,6 +1,6 @@
 # Zabbix image
 
-## Порядок разворачивания контейнеров с zabbix-server, zabbix-web, zabbix-agent и postgres СУБД
+## Порядок разворачивания контейнеров с zabbix-server, zabbix-web, zabbix-agent и СУБД postgres
 
 ### СУБД Postgres
 
@@ -25,3 +25,5 @@ docker compose up -d
 ```bash
 docker ps --format 'table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.RunningFor}}\t{{.Status}}'
 ```
+
+Что бы получить доступк к UI zabbix-web нужно перейти по URL http://localhost:8282. Учётные данные, по умолчанию, для доступа логин пользователя _Admin_, пароль _zabbix_.
