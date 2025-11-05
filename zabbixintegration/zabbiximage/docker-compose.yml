@@ -78,6 +78,9 @@ services:
       - DB_SERVER_HOST=postgres
       - DB_TLS_CONNECT=true
       - DB_TLS_CA_FILE=/etc/zabbix/web/certs/ca.crt
+      #- ZBX_SERVER_TLS_CAFILE=/etc/zabbix/web/certs/ca.crt
+      #- ZBX_SERVER_TLS_KEYFILE=/etc/zabbix/web/certs/server.key
+      #- ZBX_SERVER_TLS_CERTFILE=/etc/zabbix/web/certs/server.crt
       #- DB_TLS_CERT_FILE=/etc/zabbix/web/certs/client.crt
       #- DB_TLS_KEY_FILE=/etc/zabbix/web/certs/client.key
       #- DB_TLS_CIPHERS=ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256
@@ -106,6 +109,8 @@ services:
       - $PWD/zabbix/modules/:/usr/share/zabbix/modules/:ro
       - $PWD/img/icon-sprite.svg:/usr/share/zabbix/assets/img/icon-sprite.svg:ro
       - $PWD/certs/rootCA.pem:/etc/zabbix/web/certs/ca.crt:ro
+      #- $PWD/certs/server-key.pem:/etc/zabbix/web/certs/server.key:ro
+      #- $PWD/certs/server-cert.pem:/etc/zabbix/web/certs/server.crt:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro  
     depends_on:
