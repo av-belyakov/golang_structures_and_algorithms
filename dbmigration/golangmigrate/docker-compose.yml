@@ -1,28 +1,60 @@
 services:
   migrate:
+    build: 
+      context: golang-migrate
+      dockerfile: Dockerfile
     container_name: golang-migrate
-    build: golang-migrate
-    networks:
-      - migrate-network
+    user: root
+    command: chmod 777 /opt/golang-migrate/clickhouse/migrations && \
+             chown -R 1500:1500 /opt/golang-migrate/clickhouse/migrations
     volumes:
-      - $PWD/golang-migrate/migration.sh:/opt/golang-migrate/migration.sh:rw
-      - $PWD/golang-migrate/postgres/migrations:/opt/golang-migrate/postgres/migrations:rw
+      - $PWD/golangmigrateimage/.env.default:/opt/golang-migrate/.env:rw
+      - $PWD/golangmigrateimage/migration.sh:/opt/golang-migrate/migration.sh:rw
+      - $PWD/golangmigrateimage/postgres/migrations:/opt/golang-migrate/postgres/migrations:rw
+      - $PWD/golangmigrateimage/clickhouse/templates:/opt/golang-migrate/clickhouse/templates:rw
+      - $PWD/golangmigrateimage/clickhouse/migrations:/opt/golang-migrate/clickhouse/migrations:rw
+    networks:
+      - soc-network
     depends_on:
       - postgres
+      - clickhouse
 
   postgres:
+    image: postgres:job
+    pull_policy: never  # Никогда не делать pull
     container_name: postgres
-    image: postgres:latest
     restart: unless-stopped
-    networks:
-      - migrate-network
     env_file:
-      - .postgres-env
+      - .env.postgres
     ports:
       - 5432:5432
+    networks:
+      - soc-network
     volumes:
       - $PWD/postgres-data:/var/lib/postgresql/data
+      - $PWD/logs/postgresql:/var/log/postgresql:rw
+
+  clickhouse:
+    image: clickhouse:latest
+    pull_policy: never  # Никогда не делать pull
+    container_name: clickhouse
+    restart: unless-stopped
+    env_file:
+      - .env.clickhouse
+    ports:
+      - 9000:9000
+      - 8123:8123
+    networks:
+      - soc-network
+    volumes:
+      - $PWD/clickhouse-data:/var/lib/clickhouse
+      - $PWD/logs/clickhouse-server:/var/log/clickhouse-server:rw
+      - $PWD/logs/clickhouse-server:/var/log/clickhouse-server:rw
 
 networks:
-  migrate-network:
+  soc-network:
     driver: bridge
+
+volumes:
+  soc-volume:
+  caddy_config:

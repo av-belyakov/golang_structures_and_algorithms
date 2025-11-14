@@ -1,191 +1,251 @@
 #!/bin/bash
 
-ACTION="up"
-#ACTION="down 1"
+RESET="\033[0m"
 
-DIR_POSTGRES_MGR="postgres/migrations"
-DIR_CLICKHOUSE_MGR="clickhouse/migrations"
-DIR_CLICKHOUSE_TEMP="clickhouse/templates"
-FILE_CLICKHOUSE_TEMPLATE="template_1.sql"
+BOLD="\e[1m"
+ITALIC="\e[3m"
 
-dir_array=("$DIR_POSTGRES_MGR" "$DIR_CLICKHOUSE_MGR"  "$DIR_CLICKHOUSE_TEMP")
+#ACTION=${1:-"up"}
 
-check_postgres() {
-    echo "⏳ Проверяем подключение к PostgreSQL..."
-    echo "Хост: $PG_HOST, Порт: $PG_PORT, Пользователь: $PG_USER, БД: $PG_DB"
+DIR_POSTGRES="postgres"
+DIR_CLICKHOUSE="clickhouse"
+DIR_MIGRATION="migrations"
+
+function printInfo() {   
+    echo -e "\033[34m[INFO]\033[0m $1"
+}
+
+function printSuccess() {
+    echo -e "\033[32m[SUCCESS]\033[0m $1"
+}
+
+function printWarrning() {
+    echo -e "\033[33m[WARRNING]\033[0m $1"
+}
+
+function printProcessing() {
+    echo -e "\033[35m[PROCESSING]\033[0m $1"
+}
+
+function printError() {
+    echo -e "\033[31m[ERROR]\033[0m $1"
+}
+
+function checkPostgres() {
+    printInfo "проверяем подключение к PostgreSQL..."
+    printf "хост: %s, порт: %s, пользователь: %s, БД: %s\n" ${POSTGRES_HOST} ${POSTGRES_PORT} ${POSTGRES_USER} ${POSTGRES_DB}
 
     local pg_timeout=${5:-"5"}
     
     if command -v pg_isready &> /dev/null; then
-        if pg_isready -h "$PG_HOST" -p "$PG_PORT" -U "$PG_USER" -d "$PG_DB" -t "$pg_timeout" &> /dev/null; then
-            echo "✅ PostgreSQL доступен"
+        if pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -U ${POSTGRES_USER} -d ${POSTGRES_DB} -t ${pg_timeout} &> /dev/null; then
+            printSuccess "PostgreSQL доступен"
             return 0
         else
-            echo "❌ Не удалось подключиться к PostgreSQL"
+            printError "не удалось подключиться к PostgreSQL"
             return 1
         fi
     fi
 
-    echo "⚠️  Утилита pg_isready не найдена"
+    printWarrning "утилита pg_isready не найдена"
 }
 
-check_clickhouse() {
-    echo "⏳ Проверяем подключение к Clickhouse..."
-    echo "Хост: $CH_HOST, Порт: $CH_HTTP__PORT, Пользователь: $CH_USER, БД: $CH_DB"
+function checkClickhouse() {
+    printInfo "проверяем подключение к Clickhouse..."
+    printf "хост: %s, порт: %s, пользователь: %s, БД: %s\n" ${CLICKHOUSE_HOST} ${CLICKHOUSE_HTTP_PORT} ${CLICKHOUSE_USER} ${CLICKHOUSE_DB}
 
     local ch_timeout=10
     local curl_cmd="curl -s -o /dev/null -w \"%{http_code}\" --connect-timeout $ch_timeout"
     
-    if [ -n "$CH_PASSWORD" ]; then
-        curl_cmd="$curl_cmd -u $CH_USER:$CH_PASSWORD"
+    if [ -n ${CLICKHOUSE_PASSWORD} ]; then
+        curl_cmd="$curl_cmd -u $CLICKHOUSE_USER:$CLICKHOUSE_PASSWORD"
     fi
     
-    local response=$(eval "$curl_cmd \"http://$CH_HOST:$CH_HTTP_PORT/\" --data \"SELECT 1\"")
+    local response=$(eval "$curl_cmd \"http://$CLICKHOUSE_HOST:$CLICKHOUSE_HTTP_PORT/\" --data \"SELECT 1\"")
     
-    if [ "$response" = "200" ]; then
-        echo "✅ Clickhouse доступен"
+    if [ ${response} = "200" ]; then
+        printSuccess "Clickhouse доступен"
         return 0
     else
-        echo "❌ Не удалось подключиться к Clickhouse"
+        printError "не удалось подключиться к Clickhouse"
         return 1
     fi	
 }
 
-check() {
-	if check_postgres && check_clickhouse; then
+function checkDatabaseAvailability() {
+	if checkPostgres && checkClickhouse; then
         return 0
     fi
 
 	return 1 
 }
 
-echo "⏳ Проверяем наличие директорий" 
-# Проверяем наличие директорий
-for item in "${dir_array[@]}"; do
-    if [ ! -d $item ]; then
-	    echo "directory $item not found"
-	    exit 1
+function checkPostgresMigrationDirectory() {
+    if [ ! -d ${DIR_POSTGRES}/${DIR_MIGRATION} ]; then
+        mkdir -p ${DIR_POSTGRES}/${DIR_MIGRATION}
+        printInfo "создана директория '${ITALIC}${DIR_POSTGRES}/${DIR_MIGRATION}${RESET}' под миграцию в Postgres"
     fi
+    
+    printSuccess "директория '${ITALIC}${DIR_POSTGRES}/${DIR_MIGRATION}${RESET}' под миграцию в Postgres доступна"
+}
 
-    echo "✅ Директория $item доступна"
-done
+function createMigrationFiles() {
+    local tmpFile="tmp.file"
+    local dirTemplates="templates"
+    local dirMigration=${DIR_MIGRATION}
+    local dirClickhouse=${DIR_CLICKHOUSE}
+    local fileTemplateStorage=".template-storage"
+    local marker="Below are the rollback commands"
 
-echo "⏳ Проверяем наличие файла с шаблонами для Clickhouse"
-# Проверяем наличие файла с шаблонами для Clickhouse
-if [ ! -f "$DIR_CLICKHOUSE_TEMP/$FILE_CLICKHOUSE_TEMPLATE" ]; then
-    echo ".env file not found"
-    exit 1
-fi
-echo "✅ Файл с шаблонами для Clickhouse доступен"
+    if [ ! -f ${dirClickhouse}/${dirTemplates} ]; then
+        mkdir -p ${dirClickhouse}/${dirTemplates}
+    fi
+    printSuccess "директория '${ITALIC}${dirTemplates}${RESET}' с шаблонами для Clickhouse доступна"
 
-echo "⏳ Проверяем наличие директории под миграцию в Clickhouse"
-# Проверяем наличие директории под миграцию в Clickhouse
-if [ ! -f "$DIR_CLICKHOUSE_MGR" ]; then
-    mkdir -p "$DIR_CLICKHOUSE_MGR"
-fi
-echo "✅ Директория под миграцию в Clickhouse доступна"
+    if [ ! -f ${dirClickhouse}/${dirTemplates}/${fileTemplateStorage} ]; then
+        touch ${dirClickhouse}/${dirTemplates}/${fileTemplateStorage}
+        printInfo "создан новый файл-хранилище списка обработаных шаблонов '${BOLD}${fileTemplateStorage}${RESET}'"
+    fi
+    printSuccess "файл-хранилище списка обработаных шаблонов '${BOLD}${fileTemplateStorage}${RESET}' доступен"
 
-echo "⏳ Проверяем наличие файла с переменными окружения"
-# Проверяем наличие файла с переменными окружения
+    if [ ! -d ${dirClickhouse}/${dirMigration} ]; then
+        mkdir -p ${dirClickhouse}/${dirMigration}
+        printInfo "создана директория '${ITALIC}${dirClickhouse}/${dirMigration}${RESET}' под миграцию в Clickhouse"
+    fi
+    printSuccess "директория '${ITALIC}${dirClickhouse}/${dirMigration}${RESET}' под миграцию в Clickhouse доступна"
+
+    newFileIsExist=false
+    printInfo "ищем файлы вида '[0-9]{4}_*.tmp.sql' в директории '${ITALIC}${dirClickhouse}/${dirTemplates}${RESET}'"
+    for file in ${dirClickhouse}/${dirTemplates}/* 
+    do 
+        filename=$(basename ${file})
+        if [ ${filename} = ${fileTemplateStorage} ]; then
+            continue
+        fi
+
+        if [[ ! ${filename} =~ ^[0-9]{4}.*tmp\.sql$ ]]; then
+            printError "файл '${BOLD}${filename}${RESET}' не соответствует шаблону '[0-9]{4}_*.tmp.sql', пропускаем"
+            continue        
+        fi
+
+        if grep -qFx ${filename} ${dirClickhouse}/${dirTemplates}/${fileTemplateStorage}; then
+            printWarrning "файл '${BOLD}${filename}${RESET}' уже обрабатывался, пропускаем"
+            continue
+        fi      
+
+        migrationName=
+        fileMigrationUp=""
+        fileMigrationDown=""
+        newFileIsExist=true
+
+        printProcessing "найден новый файл шаблонов '${BOLD}/${filename}/${RESET}', обрабатываем..."  
+        
+        migrationName="${filename#*_}"
+        migrationName="${migrationName%%.*}"
+
+        # для тестов снаружи докер контейнера
+        #response=$(docker run --rm -u $(id -u):$(id -g) -v $PWD/${dirClickhouse}/${dirMigration}:/db/migrations:rw golang-migrate:latest create -ext sql -dir /db/migrations -ext sql -tz UTC -seq create_next_migration 2>&1 | awk -F/ '{print $NF}')
+        response=$(migrate create -ext sql -dir /db/migrations -ext sql -tz UTC -seq ${migrationName} 2>&1 | awk -F/ '{print $NF}')
+
+        # преобразуем в массив
+        IFS=$'\n' read -rd '' -a files <<< "$(echo -e ${response})"
+        for file in ${files[@]}; do
+            if [[ ${file} == *"up.sql"* ]]; then
+                fileMigrationUp=${file}
+            fi
+
+            if [[ ${file} == *"down.sql"* ]]; then
+                fileMigrationDown=${file}
+            fi
+        done
+
+        # до маркера разделителя, запросы миграции типа 'UP'
+        sed "/$marker/q" ${dirClickhouse}/${dirTemplates}/${filename} | head -n -1 > ${tmpFile}
+        envsubst < ${tmpFile} > ${dirClickhouse}/${dirMigration}/${fileMigrationUp}
+        rm ${tmpFile}
+
+        # после маркера разделителя, запросы миграции типа 'DOWN' 
+        sed -n "/$marker/,\$p" ${dirClickhouse}/${dirTemplates}/${filename} | tail -n +2 > ${tmpFile}
+        envsubst < ${tmpFile} > ${dirClickhouse}/${dirMigration}/${fileMigrationDown}
+        rm ${tmpFile}
+
+        # проверяем что файл '*.up.sql' существует и не пустой        
+        if [ -s ${dirClickhouse}/${dirMigration}/${fileMigrationUp} ]; then
+            printSuccess "файл миграции '${BOLD}${fileMigrationUp}${RESET}' создан и не пуст"
+        else
+            printWarrning "создан пустой файл миграции '${BOLD}${fileMigrationUp}${RESET}'" 
+        fi
+        
+        # проверяем что файл '*.down.sql' существует и не пустой        
+        if [ -s ${dirClickhouse}/${dirMigration}/${fileMigrationDown} ]; then
+            printSuccess "файл миграции '${BOLD}${fileMigrationDown}${RESET}' создан и не пуст"  
+        else
+            printWarrning "создан пустой файл миграции '${BOLD}${fileMigrationDown}${RESET}'"
+        fi
+
+        # для тестов пока закоментирую
+        printInfo "добавляем новый файл шаблонов '${BOLD}${filename}${RESET}' в хранилище"
+        echo ${filename} >> ${dirClickhouse}/${dirTemplates}/${fileTemplateStorage}
+    done
+
+    if ! ${newFileIsExist}; then
+        printError "нет новых файлов соответствующих шаблону, нечего обрабатывать"
+    fi
+}
+
+# Поиск файла с переменными окружения
 if [ ! -f .env ]; then
-    echo ".env file not found"
+    printError "файл с переменными окружения не найден, останов"
     exit 1
 fi
-echo "✅ Файл с переменными окружения найден"
 
-echo "⏳ Экспортируем переменные окружения"
-# Экспортируем переменные окружения
+printInfo "экспортируем переменные окружения"
 export $(grep -v '^#' .env | grep -v '^$' | grep '=' | sed 's/"//g' | xargs)
 
-echo "⏳ Проверяем доступность БД"
-# Проверяем доступность БД
+#MIGRATE_ACTION=down
+#MIGRATE_STEP=1
+
+STEP=""
+ACTION=${MIGRATE_ACTION:-"up"}
+if [[ $ACTION != "up" && $ACTION != "down" ]]; then
+    printError "ошибка передачи параметра миграции, значение может быть только 'up' или 'down'"
+    exit 1
+fi
+if [[ $ACTION == "down" ]]; then
+    STEP=${MIGRATE_STEP}
+fi
+
+printInfo "проверяем доступность баз данных"
 while true; do
-    if check; then
+    if checkDatabaseAvailability; then
         break
     fi
 
-    echo "БД не доступна, ждем..."
     sleep 3
 done
 
+checkPostgresMigrationDirectory
 
 # Выполняем миграцию для Postgres #
 ###################################
-echo "⏳ Выполняем миграцию для Postgres"
-migrate -path=$PWD/postgres/migrations/ -database postgresql://$PG_USER:$PG_PASSWORD@$PG_HOST:$PG_PORT/$PG_DB?sslmode=disable $ACTION
-migrate -path=$PWD/postgres/migrations/ -database postgresql://$PG_USER:$PG_PASSWORD@$PG_HOST:$PG_PORT/$PG_DB?sslmode=disable version
-#docker run -v "$PWD/$DIR_POSTGRES_MGR/":/migrations --network host golang-migrate:latest -path=/migrations/ -database postgresql://$PG_USER:$PG_PASSWORD@$PG_HOST:$PG_PORT/$PG_DB?sslmode=disable $ACTION
-
-# Создаём новую миграцию для Clickhouse на основе шаблона от Postgres #
-#######################################################################
-next_num=$(ls -1 "$DIR_CLICKHOUSE_MGR"/*.up.sql 2>/dev/null | wc -l | awk '{printf "%06d", $1 + 1}')
-if [ -z "$next_num" ] || [ "$next_num" = "000000" ]; then
-    next_num="000001"
+printInfo "выполняем миграцию для Postgres..."
+if ! migrate -path=$PWD/postgres/migrations/ -database postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable $ACTION $STEP; then
+    printError "ошибка миграции в Postgres"
+    exit 1
+fi
+if ! migrate -path=$PWD/postgres/migrations/ -database postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable version; then
+    printError "ошибка проверки версии миграции в Postgres"
+    exit 1
 fi
 
-UP_FILE="$DIR_CLICKHOUSE_MGR/${next_num}_schema.up.sql"
-DOWN_FILE="$DIR_CLICKHOUSE_MGR/${next_num}_schema.down.sql"
-
-export PG_HOST PG_PORT PG_USER PG_PASSWORD PG_DB
-envsubst < "$DIR_CLICKHOUSE_TEMP/$FILE_CLICKHOUSE_TEMPLATE" > "$UP_FILE"
-echo "Generated up migration: $UP_FILE (with environment variables applied)"
-
-cat > "$DOWN_FILE" << EOF
--- ClickHouse migration: ${NEXT_NUM}_${MIGRATION_NAME}.down.sql
--- Rollback logic for ${MIGRATION_NAME}
--- This file will be populated with rollback commands
-
--- Example rollback commands:
--- DROP TABLE IF EXISTS alerts;
--- DROP TABLE IF EXISTS alerts_assigned;
--- DROP TABLE IF EXISTS alerts_exported;
--- DROP TABLE IF EXISTS alerts_viewed;
--- DROP TABLE IF EXISTS classtypes;
--- DROP TABLE IF EXISTS directions;
--- DROP TABLE IF EXISTS event_rules;
--- DROP TABLE IF EXISTS event_ttps;
--- DROP TABLE IF EXISTS events;
--- DROP TABLE IF EXISTS eventsources;
--- DROP TABLE IF EXISTS iocs;
--- DROP TABLE IF EXISTS iocsources;
--- DROP TABLE IF EXISTS geoip;
--- DROP TABLE IF EXISTS localclasstypes;
--- DROP TABLE IF EXISTS nccciclasses;
--- DROP TABLE IF EXISTS objects;
--- DROP TABLE IF EXISTS objects_homenets;
--- DROP TABLE IF EXISTS objects_resources;
--- DROP TABLE IF EXISTS regions;
--- DROP TABLE IF EXISTS scopes;
--- DROP TABLE IF EXISTS signatures;
--- DROP TABLE IF EXISTS tasks;
--- DROP TABLE IF EXISTS tasks2;
--- DROP TABLE IF EXISTS users;
--- DROP TABLE IF EXISTS users_histories;
-
--- Drop dictionaries
--- DROP DICTIONARY IF EXISTS siem2_iocsources;
--- DROP DICTIONARY IF EXISTS siem2_geoip;
--- DROP DICTIONARY IF EXISTS siem2_objects;
--- DROP DICTIONARY IF EXISTS siem2_externalsystems;
--- DROP DICTIONARY IF EXISTS siem2_priorities;
--- DROP DICTIONARY IF EXISTS siem2_regions;
--- DROP DICTIONARY IF EXISTS siem2_iocs;
--- DROP DICTIONARY IF EXISTS siem2_eventsources;
--- DROP DICTIONARY IF EXISTS siem2_localclasstypes;
--- DROP DICTIONARY IF EXISTS siem2_countries;
--- DROP DICTIONARY IF EXISTS siem2_signatures;
--- DROP DICTIONARY IF EXISTS siem2_directions;
--- DROP DICTIONARY IF EXISTS siem2_homenets;
--- DROP DICTIONARY IF EXISTS siem2_resources;
--- DROP DICTIONARY IF EXISTS siem2_classtypes;
--- DROP DICTIONARY IF EXISTS siem2_nccciclasses;
--- DROP DICTIONARY IF EXISTS siem2_scopes;
-
-EOF
+# Создаём файлы миграции для Clickhouse на основе файлов шаблонов #
+###################################################################
+createMigrationFiles
 
 # Выполняем миграцию для Clickhouse #
 #####################################
-echo "⏳ Выполняем миграцию для Clickhouse"
-./migrate -path=$PWD/clickhouse/migrations/ -database="clickhouse://$CH_HOST:$CH_PORT?username=$CH_USER&password=$CH_PASSWORD&database=$CH_DB&x-multi-statement=true" $ACTION
-./migrate -path=$PWD/clickhouse/migrations/ -database="clickhouse://$CH_HOST:$CH_PORT?username=$CH_USER&password=$CH_PASSWORD&database=$CH_DB&x-multi-statement=true" version
-#docker run -v "$PWD/$DIR_CLICKHOUSE_MGR/":/migrations --rm --network host golang-migrate:latest -path=/migrations/ -database="clickhouse://$CH_HOST:$CH_PORT?username=$CH_USER&password=$CH_PASSWORD&database=$CH_DB&x-multi-statement=true" $ACTION
+printInfo "выполняем миграцию для Clickhouse..."
+if ! migrate -path=$PWD/clickhouse/migrations/ -database="clickhouse://$CLICKHOUSE_HOST:$CLICKHOUSE_PORT?username=$CLICKHOUSE_USER&password=$CLICKHOUSE_PASSWORD&database=$CLICKHOUSE_DB&x-multi-statement=true" $ACTION $STEP; then
+    printError "ошибка миграции в Clickhouse"
+    exit 1
+fi
