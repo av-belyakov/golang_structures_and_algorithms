@@ -24,7 +24,7 @@ WORKDIR ${USERDIR}
 COPY --from=build_image /go/src/migrate/build/migrate.linux-386 /usr/local/bin/migrate
 COPY . ./
 RUN ln -s /usr/local/bin/migrate ./migrate && \
-    mv env.default .env && \
+    #mv .env.default .env && \
     chmod +x ./migration.sh && \
     chown -R 1500 postgres clickhouse
 USER ${USERNAME}

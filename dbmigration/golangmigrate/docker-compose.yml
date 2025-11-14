@@ -1,7 +1,7 @@
 services:
   migrate:
     build: 
-      context: golang-migrate
+      context: golangmigrateimage
       dockerfile: Dockerfile
     container_name: golang-migrate
     user: root
@@ -16,13 +16,13 @@ services:
     networks:
       - soc-network
     depends_on:
-      - postgres
+      - postgresdb
       - clickhouse
 
-  postgres:
-    image: postgres:job
+  postgresdb:
+    image: postgres:17
     pull_policy: never  # Никогда не делать pull
-    container_name: postgres
+    container_name: postgresdb
     restart: unless-stopped
     env_file:
       - .env.postgres

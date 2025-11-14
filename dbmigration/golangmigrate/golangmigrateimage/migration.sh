@@ -5,8 +5,6 @@ RESET="\033[0m"
 BOLD="\e[1m"
 ITALIC="\e[3m"
 
-#ACTION=${1:-"up"}
-
 DIR_POSTGRES="postgres"
 DIR_CLICKHOUSE="clickhouse"
 DIR_MIGRATION="migrations"
@@ -201,9 +199,6 @@ fi
 
 printInfo "экспортируем переменные окружения"
 export $(grep -v '^#' .env | grep -v '^$' | grep '=' | sed 's/"//g' | xargs)
-
-#MIGRATE_ACTION=down
-#MIGRATE_STEP=1
 
 STEP=""
 ACTION=${MIGRATE_ACTION:-"up"}

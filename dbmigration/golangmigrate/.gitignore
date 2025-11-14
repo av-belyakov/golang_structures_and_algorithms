@@ -1,2 +1,3 @@
 clickhouse-data/
 postgres-data/
+logs/
