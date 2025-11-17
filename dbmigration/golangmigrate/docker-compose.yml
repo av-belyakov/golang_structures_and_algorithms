@@ -16,13 +16,13 @@ services:
     networks:
       - soc-network
     depends_on:
-      - postgresdb
+      - postgres
       - clickhouse
 
-  postgresdb:
-    image: postgres:17
+  postgres:
+    image: postgres:16
     pull_policy: never  # Никогда не делать pull
-    container_name: postgresdb
+    container_name: postgres
     restart: unless-stopped
     env_file:
       - .env.postgres

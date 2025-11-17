@@ -1,0 +1,46 @@
+
+-- Example rollback commands:
+DROP TABLE IF EXISTS alerts;
+DROP TABLE IF EXISTS alerts_assigned;
+DROP TABLE IF EXISTS alerts_exported;
+DROP TABLE IF EXISTS alerts_viewed;
+DROP TABLE IF EXISTS classtypes;
+DROP TABLE IF EXISTS directions;
+DROP TABLE IF EXISTS event_rules;
+DROP TABLE IF EXISTS event_ttps;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS eventsources;
+DROP TABLE IF EXISTS iocs;
+DROP TABLE IF EXISTS iocsources;
+DROP TABLE IF EXISTS geoip;
+DROP TABLE IF EXISTS localclasstypes;
+DROP TABLE IF EXISTS nccciclasses;
+DROP TABLE IF EXISTS objects;
+DROP TABLE IF EXISTS objects_homenets;
+DROP TABLE IF EXISTS objects_resources;
+DROP TABLE IF EXISTS regions;
+DROP TABLE IF EXISTS scopes;
+DROP TABLE IF EXISTS signatures;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS tasks2;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS users_histories;
+
+-- Drop dictionaries
+DROP DICTIONARY IF EXISTS siem2_iocsources;
+DROP DICTIONARY IF EXISTS siem2_geoip;
+DROP DICTIONARY IF EXISTS siem2_objects;
+DROP DICTIONARY IF EXISTS siem2_externalsystems;
+DROP DICTIONARY IF EXISTS siem2_priorities;
+DROP DICTIONARY IF EXISTS siem2_regions;
+DROP DICTIONARY IF EXISTS siem2_iocs;
+DROP DICTIONARY IF EXISTS siem2_eventsources;
+DROP DICTIONARY IF EXISTS siem2_localclasstypes;
+DROP DICTIONARY IF EXISTS siem2_countries;
+DROP DICTIONARY IF EXISTS siem2_signatures;
+DROP DICTIONARY IF EXISTS siem2_directions;
+DROP DICTIONARY IF EXISTS siem2_homenets;
+DROP DICTIONARY IF EXISTS siem2_resources;
+DROP DICTIONARY IF EXISTS siem2_classtypes;
+DROP DICTIONARY IF EXISTS siem2_nccciclasses;
+DROP DICTIONARY IF EXISTS siem2_scopes;

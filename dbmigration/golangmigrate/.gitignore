@@ -1,3 +1,4 @@
+golangmigrate/clickhouse/migrations/*.sql
 clickhouse-data/
 postgres-data/
 logs/
