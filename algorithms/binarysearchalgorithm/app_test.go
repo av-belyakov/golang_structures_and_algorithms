@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/av-belyakov/golang_structures_and_algorithms/binarysearchalgorithm"
+	"github.com/av-belyakov/golang_structures_and_algorithms/algorithms/binarysearchalgorithm"
 )
 
 func TestBinarySearch(t *testing.T) {
