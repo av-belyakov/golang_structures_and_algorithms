@@ -105,3 +105,5 @@
 - fastpointerandslowpointeralgorithm - алгоритм быстрого и медленного указателей подходит для обнаружение циклов в структуре данных linked list (связный список).
 
 ##### zabbixintegration - примеры работы с пакетом обеспечивающим интеграцию с Zabbix
+
+##### netboxintegration - примеры взаимодействия с netbox

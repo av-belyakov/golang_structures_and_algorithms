@@ -1,0 +1,104 @@
+services:
+  netbox:
+    image: docker.io/netboxcommunity/netbox:v4.5-4.0.0
+    container_name: netbox-nb
+    restart: unless-stopped
+    env_file: .env.netbox
+    ports:
+      - 8080:8080
+    user: "netbox:root"
+    healthcheck:
+      test: curl -f http://localhost:8080/login/ || exit 1
+      start_period: 90s
+      timeout: 3s
+      interval: 15s
+    volumes:
+      - ./configuration:/etc/netbox/config:z,ro
+      - $PWD/netbox-media-files:/opt/netbox/netbox/media:rw
+      - $PWD/netbox-reports-files:/opt/netbox/netbox/reports:rw
+      - $PWD/netbox-scripts-files:/opt/netbox/netbox/scripts:rw
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - netbox_network
+    depends_on:
+      - postgres
+      - redis
+      - redis-cache
+
+  # postgres
+  postgres:
+    image: docker.io/postgres:18-alpine
+    container_name: postgres-nb
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready -q -t 2 -d $$POSTGRES_DB -U $$POSTGRES_USER
+      start_period: 20s
+      timeout: 30s
+      interval: 10s
+      retries: 5
+    env_file: .env.postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - $PWD/netbox-postgres:/var/lib/postgresql
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - netbox_network
+
+  # redis
+  redis:
+    image: docker.io/valkey/valkey:9.0-alpine
+    container_name: redis-nb
+    restart: unless-stopped
+    command:
+      - sh
+      - -c # this is to evaluate the $REDIS_PASSWORD from the env
+      - valkey-server --appendonly yes --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+    healthcheck: &redis-healthcheck
+      test: '[ $$(valkey-cli --pass "$${REDIS_PASSWORD}" ping) = ''PONG'' ]'
+      start_period: 5s
+      timeout: 3s
+      interval: 1s
+      retries: 5
+    env_file: .env.redis
+    volumes:
+      - $PWD/netbox-redis-data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - netbox_network
+
+  redis-cache:
+    image: docker.io/valkey/valkey:9.0-alpine
+    container_name: redis-cache-nb
+    restart: unless-stopped
+    command:
+      - sh
+      - -c # this is to evaluate the $REDIS_PASSWORD from the env
+      - valkey-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+    healthcheck: *redis-healthcheck
+    env_file: .env.redis-cache
+    volumes:
+      - $PWD/netbox-redis-cache-data:/data
+    networks:
+      - netbox_network
+
+networks:
+  netbox_network:
+    driver: bridge
+
+volumes:
+  netbox-media-files:
+    driver: local
+  netbox-postgres:
+    driver: local
+  netbox-redis-cache-data:
+    driver: local
+  netbox-redis-data:
+    driver: local
+  netbox-reports-files:
+    driver: local
+  netbox-scripts-files:
+    driver: local
