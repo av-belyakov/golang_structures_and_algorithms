@@ -18,7 +18,6 @@
 ##### databaseinteractions - Примеры взаимодействий с API различных БД
 
 - sqlite3interaction - Пример взаимодействия с Sqlite3 DB
-
 - redisdbinteraction - Пример взаимодействия с Redis DB
 
 ##### inmemorycache - Временное хранилище информации в памяти приложения (in-memory cache)
@@ -108,3 +107,9 @@
 ##### zabbixintegration - примеры работы с пакетом обеспечивающим интеграцию с Zabbix
 
 ##### netboxintegration - примеры взаимодействия с netbox
+
+##### graph - примеры построения графов
+
+- edgelist - пример построения графа типа список рёбер (edge list);
+- adjacencymatrix - пример построения графа типа матрица смежности (adjacency matrix);
+- adjacencylist - пример построения графа типа список смежности (adjacency list).
