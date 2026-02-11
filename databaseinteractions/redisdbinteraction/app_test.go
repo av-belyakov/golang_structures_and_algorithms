@@ -6,8 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/redisdbinteraction"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/redisdbinteraction"
 )
 
 //Перед началом тестирования необходимо выполнить

@@ -17,6 +17,8 @@
 
 ##### databaseinteractions - Примеры взаимодействий с API различных БД
 
+- elasticsearch - Пример развёртывания СУБД Elasticsearch + Kibana в docker контейнере. Пример взаимодействия с СУБД Elasticsearch.
+- postgresinteraction - Пример развёртывания СУБД Postgres в docker контейнере. Пример взаимодействия с СУБД Postgres.
 - sqlite3interaction - Пример взаимодействия с Sqlite3 DB
 - redisdbinteraction - Пример взаимодействия с Redis DB
 

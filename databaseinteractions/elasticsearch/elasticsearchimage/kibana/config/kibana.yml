@@ -1,0 +1,8 @@
+server.name: kibana
+server.host: 0.0.0.0
+server.publicBaseUrl: http://localhost:5601
+monitoring.ui.container.elasticsearch.enabled: true
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+elasticsearch.ssl.verificationMode: none
+#elasticsearch.username: kibana
+#elasticsearch.password: xH9uzLYVqW8alFc7DWtO

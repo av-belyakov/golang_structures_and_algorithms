@@ -1,0 +1,75 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.0 #elasticsearch:7.17.28
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node # если в кластере один узел
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=true
+      # сертификаты нужны для защиты взаимодействия между узлами кластера
+      # подробнее https://www.elastic.co/docs/deploy-manage/security/set-up-basic-security
+      #      - xpack.security.transport.ssl.enabled=true
+      #      - xpack.security.transport.ssl.verification_mode=certificate
+      #      - xpack.security.transport.ssl.keystore.path=certs/elastic-certificates.p12
+      #      - xpack.security.transport.ssl.truststore.path=certs/elastic-certificates.p12
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=D6B4T72vJxSmEH9nZT24
+      # всё что ниже это настройки для elasticvue web
+      - http.cors.enabled=true
+      - http.cors.allow-origin=http://localhost:8484
+      - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
+      - http.cors.allow-credentials=true
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    #      - ./certs:/usr/share/elasticsearch/config/certs
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    networks:
+      - elastic-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.3.0 #kibana:7.17.28
+    container_name: kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=D6B4T72vJxSmEH9nZT24
+      - XPACK_MONITORING_ENABLED=true
+      - XPACK_XPACK_MAIN_ENABLED=true
+    volumes:
+      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    ports:
+      - "5601:5601"
+    networks:
+      - elastic-network
+
+  elasticvue:
+    image: cars10/elasticvue:latest
+    container_name: elasticvue
+    ports:
+      - "8484:8080"
+    environment:
+      - PORT=8080
+    volumes:
+      - ./elasticvue/config/clusters.json:/usr/share/nginx/html/api/default_clusters.json:rw
+    depends_on:
+      - elasticsearch
+    networks:
+      - elastic-network
+    restart: unless-stopped
+
+volumes:
+  es_data:
+
+networks:
+  elastic-network:
+    driver: bridge
