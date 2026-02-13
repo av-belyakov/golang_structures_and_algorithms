@@ -1,6 +1,10 @@
 package elasticsearchexamples
 
-import "github.com/elastic/go-elasticsearch/v9"
+import (
+	"encoding/json"
+
+	"github.com/elastic/go-elasticsearch/v9"
+)
 
 type EsClient struct {
 	client   *elasticsearch.Client
@@ -47,30 +51,27 @@ type IndexesSettings map[string]struct {
 	} `json:"settings"`
 }
 
-/*
-{
-  "index_test_documents_1770886633258305" : {
-    "settings" : {
-      "index" : {
-        "creation_date_string" : "2026-02-12T08:57:13.263Z",
-        "routing" : {
-          "allocation" : {
-            "include" : {
-              "_tier_preference" : "data_content"
-            }
-          }
-        },
-        "number_of_shards" : "1",
-        "provided_name" : "index_test_documents_1770886633258305",
-        "creation_date" : "1770886633263",
-        "number_of_replicas" : "1",
-        "uuid" : "jLNp-xC6QF-zsrfzK9juXQ",
-        "version" : {
-          "created_string" : "9.3.0",
-          "created" : "9060000"
-        }
-      }
-    }
-  }
+// CommonResponse общий ответ на запрос документов
+type CommonResponse struct {
+	Hits struct {
+		Hits []struct {
+			ID     string          `json:"_id"`
+			Index  string          `json:"_index"`
+			Score  float64         `json:"_score"`
+			Source json.RawMessage `json:"_source"`
+		} `json:"hits"`
+		MaxScore float64 `json:"max_score"`
+		Total    struct {
+			Relation string `json:"relation"`
+			Value    int    `json:"value"`
+		} `json:"total"`
+	} `json:"hits"`
+	Shards struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Skipped    int `json:"skipped"`
+		Failed     int `json:"failed"`
+	} `json:"_shards"`
+	Took     int  `json:"took"`
+	TimedOut bool `json:"timed_out"`
 }
-*/

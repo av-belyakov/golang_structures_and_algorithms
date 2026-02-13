@@ -178,6 +178,26 @@ func (es *EsClient) DelIndexSetting(ctx context.Context, indexes []string) error
 	return err
 }
 
+// GetDocumentById поиск документа по его _id
+func (es *EsClient) GetDocumentById(ctx context.Context, index string, id string) ([]byte, int, error) {
+	if es.client == nil {
+		return []byte{}, 0, errors.New("the client parameters for connecting to the Elasticsearch database are not set correctly")
+	}
+
+	res, err := es.client.Get(index, id, es.client.Get.WithContext(ctx))
+	if err != nil {
+		return []byte{}, 0, err
+	}
+	defer bodyClose(res)
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return []byte{}, res.StatusCode, err
+	}
+
+	return body, res.StatusCode, nil
+}
+
 // GetDocument поиск документа в определенном заданном индексе
 func (es *EsClient) GetDocument(ctx context.Context, indexes []string, dlsQuery *strings.Reader) ([]byte, error) {
 	if es.client == nil {
@@ -239,8 +259,30 @@ func (es *EsClient) InsertDocument(ctx context.Context, index string, b []byte) 
 	return res.StatusCode, nil
 }
 
-// UpdateDocument поиск и обновление документов путём замены
-func (es *EsClient) UpdateDocument(ctx context.Context, currentIndex string, list []ServiseOption, document []byte) (statusCode, countDel int, err error) {
+// UpdateDocument обновление документа
+func (es *EsClient) UpdateDocument(ctx context.Context, index string, id string, body io.Reader) (int, error) {
+	if es.client == nil {
+		return 0, errors.New("the client parameters for connecting to the Elasticsearch database are not set correctly")
+	}
+
+	ctx, ctxCancel := context.WithTimeout(ctx, time.Second*10)
+	defer ctxCancel()
+
+	reg, err := es.client.Update(index, id, body, es.client.Update.WithContext(ctx))
+	if err != nil {
+		return 0, err
+	}
+	defer bodyClose(reg)
+
+	return reg.StatusCode, nil
+
+}
+
+// UpdateDocuments обновление документов
+//func (es *EsClient) UpdateDocuments(ctx context.Context, index string, b []byte) (int, error) {}
+
+// UpdateDocumentWithReplacement поиск и обновление документов путём замены
+func (es *EsClient) UpdateDocumentWithReplacement(ctx context.Context, currentIndex string, list []ServiseOption, document []byte) (statusCode, countDel int, err error) {
 	for _, v := range list {
 		res, errDel := es.client.Delete(v.Index, v.ID)
 		if errDel != nil {
