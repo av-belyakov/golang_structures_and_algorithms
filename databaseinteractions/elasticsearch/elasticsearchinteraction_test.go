@@ -8,8 +8,10 @@ import (
 	"testing"
 	"time"
 
-	elasticsearchexamples "github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/elasticsearch"
+	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
+
+	elasticsearchexamples "github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/elasticsearch"
 )
 
 const (
@@ -373,37 +375,43 @@ func TestElasticsearchIntaraction(t *testing.T) {
 
 func GetExampleDocuments() [][]byte {
 	return [][]byte{
-		[]byte(`{
+		fmt.Appendf(nil, `{
 					"source": "source_test_1",
     				"event": {
         				"operation": "update",
         				"rootId": "~91686760480",
-        				"startDate": 1745568135456,
-						"name": "Elemnt_1"
-					}}`),
-		[]byte(`{
+        				"startDate": %d,
+						"name": "%s"
+					}}`,
+			gofakeit.Date().Unix(),
+			gofakeit.Name()),
+		fmt.Appendf(nil, `{
 					"source": "source_test_2",
     				"event": {
         				"operation": "insert",
         				"rootId": "~11186760480",
-        				"startDate": 1743368135445,
-						"name": "Prizma_2"
-					}}`),
-		[]byte(`{
+        				"startDate": %d,
+						"name": "%s"
+					}}`,
+			gofakeit.Date().Unix(),
+			gofakeit.Name()),
+		fmt.Appendf(nil, `{
 					"source": "source_test_1",
     				"event": {
         				"operation": "insert",
         				"rootId": "~91686760111",
-        				"startDate": 1745568135655,
-						"name": "Elemnt_2"
-					}}`),
-		[]byte(`{
+        				"startDate": %d,
+						"name": "%s"
+					}}`,
+			gofakeit.Date().Unix(),
+			gofakeit.Name()),
+		fmt.Appendf(nil, `{
 					"source": "source_test_3",
     				"event": {
         				"operation": "insert",
         				"rootId": "~91686760480",
-        				"startDate": 1745568135456,
-						"name": "Catra"
+        				"startDate": %d,
+						"name": "%s"
 					},
 					"object": {
 						"objectId": "~91686760480",
@@ -411,14 +419,16 @@ func GetExampleDocuments() [][]byte {
         				"organisationId": "~4192",
         				"requestId": "50ae5f0dc59a6842:-3d107b9c:1963e52bc3d:-8000:1468002",
         				"objectType": "message"
-					}}`),
-		[]byte(`{
+					}}`,
+			gofakeit.Date().Unix(),
+			gofakeit.Name()),
+		fmt.Appendf(nil, `{
 					"source": "source_test_3",
     				"event": {
         				"operation": "update",
         				"rootId": "~91686763728",
-        				"startDate": 17454445434,
-						"name": "Catra"
+        				"startDate": %d,
+						"name": "%s"
 					},
 					"object": {
 						"objectId": "~91686760480",
@@ -426,14 +436,16 @@ func GetExampleDocuments() [][]byte {
         				"organisationId": "~44552",
         				"requestId": "50ae5f0dc59a6842:-3d107b9c:1963e52bc3d:-8000:1468002",
         				"objectType": "message"
-					}}`),
-		[]byte(`{
+					}}`,
+			gofakeit.Date().Unix(),
+			gofakeit.Name()),
+		fmt.Appendf(nil, `{
 					"source": "source_test_3",
     				"event": {
         				"operation": "insert",
         				"rootId": "~91686760480",
-        				"startDate": 17343545332345,
-						"name": "Catra"
+        				"startDate": %d,
+						"name": "%s"
 					},
 					"object": {
 						"objectId": "~91686760480",
@@ -441,6 +453,8 @@ func GetExampleDocuments() [][]byte {
         				"organisationId": "~433",
         				"requestId": "50ae5f0dc59a6842:-3d107b9c:1963e52bc3d:-8000:1468002",
         				"objectType": "message"
-					}}`),
+					}}`,
+			gofakeit.Date().Unix(),
+			gofakeit.Name()),
 	}
 }
