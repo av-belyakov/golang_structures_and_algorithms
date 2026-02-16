@@ -138,10 +138,10 @@ func (es *EsClient) GetIndexSetting(ctx context.Context, index string) (IndexesS
 }
 
 // SetIndexSetting установить новые настройки индекса
-func (es *EsClient) SetIndexSetting(ctx context.Context, indexes []string, dslQuery *strings.Reader) (bool, error) {
+func (es *EsClient) SetIndexSetting(ctx context.Context, indexes []string, body *strings.Reader) (bool, error) {
 	indicesSettings := esapi.IndicesPutSettingsRequest{
 		Index: indexes,
-		Body:  dslQuery,
+		Body:  body,
 	}
 
 	res, err := indicesSettings.Do(ctx, es.client.Transport)
@@ -199,7 +199,7 @@ func (es *EsClient) GetDocumentById(ctx context.Context, index string, id string
 }
 
 // GetDocument поиск документа в определенном заданном индексе
-func (es *EsClient) GetDocument(ctx context.Context, indexes []string, dlsQuery *strings.Reader) ([]byte, error) {
+func (es *EsClient) GetDocument(ctx context.Context, indexes []string, body *strings.Reader) ([]byte, error) {
 	if es.client == nil {
 		return []byte{}, errors.New("the client parameters for connecting to the Elasticsearch database are not set correctly")
 	}
@@ -212,7 +212,7 @@ func (es *EsClient) GetDocument(ctx context.Context, indexes []string, dlsQuery 
 	response, err := es.client.Search(
 		es.client.Search.WithContext(ctxTimeout),
 		es.client.Search.WithIndex(indexes...),
-		es.client.Search.WithBody(dlsQuery),
+		es.client.Search.WithBody(body),
 	)
 	if err != nil {
 		return res, err
@@ -275,11 +275,32 @@ func (es *EsClient) UpdateDocument(ctx context.Context, index string, id string,
 	defer bodyClose(reg)
 
 	return reg.StatusCode, nil
-
 }
 
-// UpdateDocuments обновление документов
-//func (es *EsClient) UpdateDocuments(ctx context.Context, index string, b []byte) (int, error) {}
+// UpdateDocuments обновление списка документов которые совпадают с запросом
+func (es *EsClient) UpdateDocuments(ctx context.Context, indexes []string, body io.Reader) (int, error) {
+	if es.client == nil {
+		return 0, errors.New("the client parameters for connecting to the Elasticsearch database are not set correctly")
+	}
+
+	ctx, ctxCancel := context.WithTimeout(ctx, time.Second*10)
+	defer ctxCancel()
+
+	// подробнее по всем параметра м можно посмотреть здесь
+	// https://pkg.go.dev/github.com/elastic/go-elasticsearch/v9/esapi#UpdateByQuery
+	reg, err := es.client.UpdateByQuery(indexes,
+		es.client.UpdateByQuery.WithContext(ctx),
+		// разрешить подсчёт конфликтов версий вместо остановки и возврата к предыдущей версии, установив
+		es.client.UpdateByQuery.WithConflicts("proceed"),
+		es.client.UpdateByQuery.WithBody(body),
+	)
+	if err != nil {
+		return 0, err
+	}
+	defer bodyClose(reg)
+
+	return reg.StatusCode, nil
+}
 
 // UpdateDocumentWithReplacement поиск и обновление документов путём замены
 func (es *EsClient) UpdateDocumentWithReplacement(ctx context.Context, currentIndex string, list []ServiseOption, document []byte) (statusCode, countDel int, err error) {

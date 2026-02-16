@@ -35,6 +35,35 @@ func TestElasticsearchIntaraction(t *testing.T) {
 		documentId        string
 	)
 
+	responseDocumentId := struct {
+		Source struct {
+			Source    string `json:"source"`
+			PartyDate string `json:"party_date"`
+			Event     struct {
+				Operation string `json:"operation"`
+				RootId    string `json:"rootId"`
+				StartDate int64  `json:"startDate"`
+			} `json:"event"`
+			Hobby struct {
+				Name     string `json:"name"`
+				Weekday  string `json:"weekday"`
+				Time     string `json:"time"`
+				Duration string `json:"duration"`
+			} `json:"hobby"`
+			AboutOue struct {
+				Name    string `json:"name"`
+				Address string `json:"address"`
+				Age     int    `json:"age"`
+			} `json:"aboutOur"`
+		} `json:"_source"`
+		Index       string `json:"_index"`
+		Id          string `json:"_id"`
+		Version     int    `json:"_version"`
+		SeqNo       int    `json:"_seq_no"`
+		PrimaryTerm int    `json:"_primary_term"`
+		Found       bool   `json:"found"`
+	}{}
+
 	t.Run("Тест 1.1. Подключение к БД с использованием API-ключа.", func(t *testing.T) {
 		es, err := elasticsearchexamples.NewClient(
 			elasticsearchexamples.WithApiKey(ApiKey),
@@ -106,7 +135,10 @@ func TestElasticsearchIntaraction(t *testing.T) {
 
 			// Следует обратить внимание что при установки этого параметра он переезжает
 			// из объекта 'defaults' настроек в 'settings'
-			dslQuery := strings.NewReader(`{
+			_, err := es.SetIndexSetting(
+				t.Context(),
+				[]string{fullTestIndexName},
+				strings.NewReader(`{
 				"index": {
 					"mapping": {
 						"total_fields": {
@@ -114,25 +146,21 @@ func TestElasticsearchIntaraction(t *testing.T) {
 							}
 						}
 					}
-				}`)
-
-			_, err := es.SetIndexSetting(t.Context(), []string{fullTestIndexName}, dslQuery)
+				}`))
 			assert.NoError(t, err)
 		})
 
 		t.Run("2.5. Ищем документ в определенном заданном индексе", func(t *testing.T) {
-			source := "source_test_3"
-
 			// формируем Query DSL запрос
-			dslQuery := strings.NewReader(fmt.Sprintf(
-				`{"query": 
+			res, err := es.GetDocument(
+				t.Context(),
+				[]string{fullTestIndexName},
+				strings.NewReader(`{"query": 
 		  			{"bool": 
 		    			{"must": [
-			  				{"match": {"source": "%s"}}, 
+			  				{"match": {"source": "source_test_3"}}, 
 			  				{"match": {"event.rootId": "~91686760480"}}
-						]}}}`, source))
-
-			res, err := es.GetDocument(t.Context(), []string{fullTestIndexName}, dslQuery)
+						]}}}`))
 			assert.NoError(t, err)
 
 			commonResponse = &elasticsearchexamples.CommonResponse{}
@@ -145,7 +173,10 @@ func TestElasticsearchIntaraction(t *testing.T) {
 		})
 
 		t.Run(fmt.Sprintf("2.6. Добавляем новый документ в индекс '%s'", fullTestIndexName), func(t *testing.T) {
-			_, err := es.InsertDocument(t.Context(), fullTestIndexName, fmt.Appendf(nil, `{
+			_, err := es.InsertDocument(
+				t.Context(),
+				fullTestIndexName,
+				fmt.Appendf(nil, `{
 					"source": "source_test_1",
     				"event": {
         				"operation": "create",
@@ -155,18 +186,20 @@ func TestElasticsearchIntaraction(t *testing.T) {
 				}`, exampleRootId))
 			assert.NoError(t, err)
 
-			time.Sleep(1 * time.Second)
+			time.Sleep(1_000 * time.Millisecond)
 
 			// проверяем наличие добавленного документа
 			res, err := es.GetDocument(
 				t.Context(),
 				[]string{fullTestIndexName},
-				strings.NewReader(fmt.Sprintf(
-					`{"query": 
-						{"bool": 
-							{"must": [
-								{"match": {"event.rootId": "%s"}}
-							]}}}`, exampleRootId)))
+				strings.NewReader(
+					fmt.Sprintf(
+						`{"query": 
+							{"bool": 
+								{"must": [
+									{"match": {
+										"event.rootId": "%s"}}]}}}`,
+						exampleRootId)))
 			assert.NoError(t, err)
 
 			commonResponse = &elasticsearchexamples.CommonResponse{}
@@ -182,73 +215,150 @@ func TestElasticsearchIntaraction(t *testing.T) {
 
 		t.Run(fmt.Sprintf("2.7. Изменяем некоторые параметры документа с rootId '%s' для индекса '%s'", exampleRootId, fullTestIndexName), func(t *testing.T) {
 			// обновление документа в Elasticsearch возможно с помощью запуска скрипта
-			// или путём передачи частичного документа
-			// подробнее https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-update
+			// или путём передачи частичного документа подробнее
+			// https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-update и
+			// https://www.elastic.co/docs/reference/elasticsearch/rest-apis/update-document
 			// для полной замены документа нужно использовать индексный метод API
+			// то есть выполнить InsertDocument но возможно понадобятся дополнительные настройки
+			// метода, подробнее по настройкам https://pkg.go.dev/github.com/elastic/go-elasticsearch/v9/esapi#Index
 
-			// для обновления некоторых частей документа в Elasticsearch необходимо использовать скрипт
-			bodyScript := strings.NewReader(`{
-				"script" : {
-					"source": "ctx._source.event.operation = params.operation",
-					"lang": "painless",
-					"params" : {
-						"operation" : "update"
-					}
-				}
-			}`)
+			t.Run("2.7.1. Изменение параметров документа с помощью локального скрипта Elasticsearch", func(t *testing.T) {
+				statusCode, err := es.UpdateDocument(
+					t.Context(),
+					fullTestIndexName,
+					documentId,
+					strings.NewReader(`{
+						"script" : {
+							"source": "ctx._source.event.operation = params.operation",
+							"lang": "painless",
+							"params" : {
+								"operation" : "update"
+							}
+						}
+					}`),
+				)
+				assert.NoError(t, err)
+				assert.Equal(t, statusCode, http.StatusOK, fmt.Sprintf(
+					"Ошибка при обновлении документа с rootId '%s' в индексе '%s', код ошибки '%d'\n",
+					exampleRootId,
+					fullTestIndexName,
+					statusCode,
+				))
 
-			statusCode, err := es.UpdateDocument(
+				// проверяем изменение документа
+				res, statusCode, err := es.GetDocumentById(t.Context(), fullTestIndexName, documentId)
+				assert.NoError(t, err)
+				assert.Equal(t, statusCode, http.StatusOK)
+
+				assert.NoError(t, json.Unmarshal(res, &responseDocumentId))
+				assert.Equal(t, responseDocumentId.Source.Event.Operation, "update")
+			})
+
+			t.Run("2.7.2. Изменение параметров документа путём частичной замены документа", func(t *testing.T) {
+				// для частичного изменения документа нужно использовать конструкцию
+				// "doc": { ... }
+				// подробнее https://www.elastic.co/docs/reference/elasticsearch/rest-apis/update-document
+				statusCode, err := es.UpdateDocument(
+					t.Context(),
+					fullTestIndexName,
+					documentId,
+					strings.NewReader(`{
+						"doc": {
+							"hobby": {
+								"name": "MotoCross",
+								"weekday": "Sunday",
+								"time": "10:05:00",
+								"duration": "3h"
+							}
+						}
+					}`),
+				)
+				assert.NoError(t, err, fmt.Sprintf("update error: '%+v'", err))
+				assert.Equal(t, statusCode, http.StatusOK, fmt.Sprintf(
+					"Ошибка при обновлении документа с rootId '%s' в индексе '%s', код ошибки '%d'\n",
+					exampleRootId,
+					fullTestIndexName,
+					statusCode,
+				))
+
+				// выполняем обновление если значение найдено или добавляем
+				// значение если оно не было найдено
+				statusCode, err = es.UpdateDocument(
+					t.Context(),
+					fullTestIndexName,
+					documentId,
+					strings.NewReader(`{
+						"doc": {
+							"hobby": {
+								"duration": "4h15m"
+							}
+						},
+						"doc_as_upsert": true
+					}`),
+				)
+
+				// проверяем изменение документа
+				res, statusCode, err := es.GetDocumentById(t.Context(), fullTestIndexName, documentId)
+				assert.NoError(t, err)
+				assert.Equal(t, statusCode, http.StatusOK)
+
+				//fmt.Println("Document id:", documentId)
+				//fmt.Println("Response:", string(res))
+
+				assert.NoError(t, json.Unmarshal(res, &responseDocumentId))
+				assert.Equal(t, responseDocumentId.Source.Hobby.Name, "MotoCross")
+				assert.Equal(t, responseDocumentId.Source.Hobby.Duration, "4h15m")
+			})
+		})
+
+		t.Run(fmt.Sprintf("2.8. Изменяем некоторые параметры во всех документах в списке индексов, для теста тольоко индекс с имененм '%s'", fullTestIndexName), func(t *testing.T) {
+			partyDate := "2026-02-23 15:00:00"
+			source := "source_test_3"
+
+			statusCode, err := es.UpdateDocuments(
 				t.Context(),
-				fullTestIndexName,
-				documentId,
-				bodyScript,
+				[]string{fullTestIndexName},
+				strings.NewReader(fmt.Sprintf(`{
+					"script": {
+						"source": "ctx._source.party_date = params.party_date",
+						"lang": "painless",
+						"params" : {
+							"party_date": "%s"
+						}
+					},
+					"query": {
+						"term": {
+							"source": "%s"
+						}
+					}
+				}`, partyDate, source)),
 			)
-			assert.NoError(t, err)
-			assert.Equal(t, statusCode, http.StatusOK, fmt.Sprintf(
-				"Ошибка при обновлении документа с rootId '%s' в индексе '%s', код ошибки '%d'\n",
-				exampleRootId,
-				fullTestIndexName,
-				statusCode,
-			))
-
-			fmt.Println("Document id:", documentId)
-
-			// проверяем изменение документа
-			res, statusCode, err := es.GetDocumentById(t.Context(), fullTestIndexName, documentId)
 			assert.NoError(t, err)
 			assert.Equal(t, statusCode, http.StatusOK)
 
-			fmt.Println("Response:", string(res))
+			time.Sleep(1_000 * time.Millisecond)
 
-			responseDocumentId := struct {
-				Source struct {
-					Source string `json:"source"`
-					Event  struct {
-						Operation string `json:"operation"`
-						RootId    string `json:"rootId"`
-						StartDate int64  `json:"startDate"`
-					} `json:"event"`
-				} `json:"_source"`
-				Index       string `json:"_index"`
-				Id          string `json:"_id"`
-				Version     int    `json:"_version"`
-				SeqNo       int    `json:"_seq_no"`
-				PrimaryTerm int    `json:"_primary_term"`
-				Found       bool   `json:"found"`
-			}{}
-			assert.NoError(t, json.Unmarshal(res, &responseDocumentId))
-			assert.Equal(t, responseDocumentId.Source.Event.Operation, "update")
+			res, err := es.GetDocument(
+				t.Context(),
+				[]string{fullTestIndexName},
+				strings.NewReader(fmt.Sprintf(`
+					{"query": 
+						{"bool": 
+							{"must": [
+								{"match": {"party_date": "%s"}}]}}}
+							`, partyDate)),
+			)
+			assert.NoError(t, err)
 
-			/*
-				1. пример обновления документа по его _id с помощью скрипта в Elasticsearch
-				сделал, теперь надо попробовать обновить документ путём передачи частичного документа
+			fmt.Println("___ Updated documents:", string(res))
 
-				2. нужно сделать метод UpdateDocuments
-			*/
+			commonResponse = &elasticsearchexamples.CommonResponse{}
+			assert.NoError(t, json.Unmarshal(res, commonResponse))
+			assert.Equal(t, commonResponse.Hits.Total.Value, 3)
 		})
 	})
 
-	t.Run("Тест 3. Удаляем все индексы подходящие под определённый шаблон", func(t *testing.T) {
+	/*t.Run("Тест 3. Удаляем все индексы подходящие под определённый шаблон", func(t *testing.T) {
 		indexes, err := es.GetExistingIndexes(t.Context(), testIndexName)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, indexes)
@@ -258,7 +368,7 @@ func TestElasticsearchIntaraction(t *testing.T) {
 
 	t.Cleanup(func() {
 		es.ConnectionClose(t.Context())
-	})
+	})*/
 }
 
 func GetExampleDocuments() [][]byte {
