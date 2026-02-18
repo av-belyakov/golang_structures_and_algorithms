@@ -1,4 +1,4 @@
-package postgresinteraction_test
+package postgresdb_test
 
 import (
 	"context"

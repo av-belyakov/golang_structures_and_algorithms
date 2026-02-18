@@ -11,7 +11,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
 
-	elasticsearchexamples "github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/elasticsearch"
+	elasticsearchexamples "github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/elasticsearchdb"
 )
 
 const (

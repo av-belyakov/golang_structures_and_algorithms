@@ -1,4 +1,4 @@
-package redisdbinteraction
+package redisdb
 
 import (
 	"context"

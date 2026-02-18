@@ -1,4 +1,4 @@
-package redisdbinteraction_test
+package redisdb_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/redisdbinteraction"
+	redisdbinteraction "github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/redisdb"
 )
 
 //Перед началом тестирования необходимо выполнить

@@ -1,5 +1,5 @@
 // Пример взаимодействия с Redis DB
-package redisdbinteraction
+package redisdb
 
 import "github.com/redis/go-redis/v9"
 
