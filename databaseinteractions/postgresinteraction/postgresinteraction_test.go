@@ -1,6 +1,7 @@
 package postgresinteraction_test
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -82,7 +83,7 @@ func TestPostgresInteraction(t *testing.T) {
 	})
 
 	t.Run("Тест 2. Выполняем запросы к БД", func(t *testing.T) {
-		t.Run("2.1. Поиск в интервале портов", func(t *testing.T) {
+		t.Run("2.1. Поиск записей по интервалу портов", func(t *testing.T) {
 			rows, err := db.QueryContext(t.Context(),
 				`SELECT * 
 				FROM public.attack_protocols 
@@ -138,15 +139,63 @@ func TestPostgresInteraction(t *testing.T) {
 				fmt.Println(info)
 			}
 		})
+
+		t.Run("2.2. Поиск записей по дате и по идентификатору уровня атаки", func(t *testing.T) {
+			rows, err := db.QueryContext(t.Context(),
+				`SELECT  name, created_at, attack_level_id
+				FROM public.attack_protocols 
+				WHERE CAST(created_at AS DATE) BETWEEN '1995-01-01' AND '2025-12-31'
+				AND attack_level_id = 2;`,
+			)
+			assert.NoError(t, err)
+
+			var (
+				createdAt     time.Time
+				name          string
+				attackLevelID int
+			)
+
+			list := []Info(nil)
+			for rows.Next() {
+				err := rows.Scan(
+					&name,
+					&createdAt,
+					&attackLevelID,
+				)
+				assert.NoError(t, err)
+
+				list = append(list, Info{
+					Name:          name,
+					CreatedAt:     createdAt,
+					AttackLevelId: attackLevelID,
+				})
+			}
+
+			rows.Close()
+			assert.Greater(t, len(list), 0)
+
+			for _, info := range list {
+				fmt.Println(info)
+			}
+		})
 	})
-	//t.Run("", func(t *testing.T) {})
-	//t.Run("", func(t *testing.T) {})
+	t.Run("Тест 3. Выполняем поиск и обновление записей", func(t *testing.T) {
+		t.Run("3.1. Обновление протокола для некоторых типов атак", func(t *testing.T) {
+			row, err := db.QueryContext(t.Context(),
+				`UPDATE public.attack_protocols
+				SET default_t_protocol = 'UDP' 
+				WHERE attack_level_id = 2;`,
+			)
+			assert.NoError(t, err)
+			row.Close()
+		})
+	})
 
 	t.Cleanup(func() {
-		//_, err := db.QueryContext(context.Background(), `DROP TABLE IF EXISTS public.attack_protocols;`)
-		//if err != nil {
-		//	fmt.Println("error drop table:", err)
-		//}
+		_, err := db.QueryContext(context.Background(), `DROP TABLE IF EXISTS public.attack_protocols;`)
+		if err != nil {
+			fmt.Println("error drop table:", err)
+		}
 
 		db.Close()
 
