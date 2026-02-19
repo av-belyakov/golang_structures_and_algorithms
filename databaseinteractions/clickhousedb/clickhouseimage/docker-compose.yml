@@ -1,0 +1,74 @@
+services:
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse-server
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # запустить сервер от имени пользователя root
+      #- CLICKHOUSE_RUN_AS_ROOT=1
+      # создать базу данных при запуске
+      - CLICKHOUSE_DB=$CLICKHOUSE_SERVER_DB
+      # при запуске контейнера может потребоваться создать пользователя
+      # (по умолчанию используется пользователь с именем default) и базу данных
+      # это можно сделать с помощью переменных среды CLICKHOUSE_DB, CLICKHOUSE_USER,
+      # CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT и CLICKHOUSE_PASSWORD
+      # у пользователя default по умолчанию отключён доступ к сети, если не заданы
+      # параметры CLICKHOUSE_USER, CLICKHOUSE_PASSWORD, или CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
+      # подробнее https://clickhouse.com/docs/ru/install/docker
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_USER=$CLICKHOUSE_SERVER_USER
+      - CLICKHOUSE_PASSWORD=$CLICKHOUSE_SERVER_PASSWORD
+    networks:
+      - click-network
+    ports:
+      # внешний порт:внутренний порт
+      # порт с HTTP интерфейсом (8443 для HTTPS), подробнее https://clickhouse.com/docs/interfaces/http
+      - $CLICKHOUSE_SERVER_HTTP_CLIENT_PORT:8123
+      # порт для своего собственного клиента
+      - $CLICKHOUSE_SERVER_YOUR_OWN_PORT:9000
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    #user: "${UID}:${GID}"
+    volumes:
+      # основная директория с данными БД
+      - $PWD/clickhouse-server-data:/var/lib/clickhouse/:rw
+      # директория с логами БД
+      - $PWD/clickhouse-server-log:/var/log/clickhouse-server/:rw
+
+      # конфигурационные файлы сервера
+      - $PWD/config/config.xml:/etc/clickhouse-server/config.d/config.xml:rw
+      # конфигурационные файлы клиента
+      - $PWD/config/users.xml:/etc/clickhouse-server/users.d/users.xml:rw # Пользователи
+
+      # папка со сценариями инициализации базы данных
+      # чтобы выполнить дополнительную инициализацию в образе, полученном на основе этого,
+      # добавьте один или несколько *.sql, *.sql.gz, или *.sh скриптов под /docker-entrypoint-initdb.d
+      # после вызова entrypoint initdb он запустит любые *.sql файлы, любые исполняемые *.sh
+      # скрипты и отправит любые неисполняемые *.sh скрипты, найденные в этом каталоге,
+      # для дальнейшей инициализации перед запуском службы
+      - $PWD/clickhouse-initialization-scripts:/docker-entrypoint-initdb.d/:rw
+
+      # проброс временной зоны и локального времени сервера в докер
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+volumes:
+  click-data:
+
+networks:
+  click-network:
+    driver: bridge
