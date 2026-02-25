@@ -25,7 +25,7 @@ services:
       # внешний порт:внутренний порт
       # порт с HTTP интерфейсом (8443 для HTTPS), подробнее https://clickhouse.com/docs/interfaces/http
       - $CLICKHOUSE_SERVER_HTTP_CLIENT_PORT:8123
-      # порт для своего собственного клиента
+      # порт для своего собственного клиента и пакета clickhouse-go
       - $CLICKHOUSE_SERVER_YOUR_OWN_PORT:9000
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
