@@ -3,6 +3,7 @@ package clickhousedb
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -32,7 +33,7 @@ func New(opts ...Options) (*ClickHouseClient, error) {
 		Auth: clickhouse.Auth{
 			Database: chc.parameters.database,
 			Username: chc.parameters.user,
-			Password: chc.parameters.passwd,
+			Password: chc.parameters.password,
 		},
 		DialContext: func(ctx context.Context, addr string) (net.Conn, error) {
 			var d net.Dialer
@@ -69,4 +70,69 @@ func New(opts ...Options) (*ClickHouseClient, error) {
 	}
 
 	return chc, nil
+}
+
+// WithHost имя или ip адрес
+func WithHost(v string) Options {
+	return func(th *ClickHouseClient) error {
+		if v == "" {
+			return errors.New("the value of 'host' cannot be empty")
+		}
+
+		th.parameters.host = v
+
+		return nil
+	}
+}
+
+// WithPort сетевой порт
+func WithPort(v int) Options {
+	return func(th *ClickHouseClient) error {
+		if v <= 0 || v > 65535 {
+			return errors.New("an incorrect network port value was received")
+		}
+
+		th.parameters.port = v
+
+		return nil
+	}
+}
+
+// WithDatabase имя базы данных
+func WithDatabase(v string) Options {
+	return func(th *ClickHouseClient) error {
+		if v == "" {
+			return errors.New("the value of 'database' cannot be empty")
+		}
+
+		th.parameters.database = v
+
+		return nil
+	}
+}
+
+// WithUser имя пользователя для авторизации в БД
+func WithUser(v string) Options {
+	return func(th *ClickHouseClient) error {
+		if v == "" {
+			return errors.New("the value of 'user' cannot be empty")
+		}
+
+		th.parameters.user = v
+
+		return nil
+	}
+}
+
+// WithPassword пароль для авторизации в БД
+func WithPassword(v string) Options {
+	return func(th *ClickHouseClient) error {
+		if v == "" {
+			return errors.New("the value of 'passwd' cannot be empty")
+		}
+
+		th.parameters.password = v
+
+		return nil
+	}
 }

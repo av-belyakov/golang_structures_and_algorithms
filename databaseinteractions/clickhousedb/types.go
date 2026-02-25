@@ -2,13 +2,20 @@ package clickhousedb
 
 import (
 	"context"
-	"database/sql/driver"
+	"database/sql"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 )
 
+//
+// Для подключения к БД выбираем один из двух вариантов
+// 1. Используем нативный интерфейс драйвера Clickhouse
+// 2. Используем общую структуру драйвера database/sql
+//
+
 type ClickHouseClient struct {
-	connect    driver.Conn
+	connect    clickhouse.Conn // нативный интерфейс драйвера Clickhouse
+	connectDb  *sql.DB         // общую структуру драйвера database/sql
 	options    *clickhouse.Options
 	ctx        context.Context
 	parameters ClickhouseParameters
@@ -17,7 +24,7 @@ type ClickHouseClient struct {
 type ClickhouseParameters struct {
 	database string
 	user     string
-	passwd   string
+	password string
 	host     string
 	port     int
 }

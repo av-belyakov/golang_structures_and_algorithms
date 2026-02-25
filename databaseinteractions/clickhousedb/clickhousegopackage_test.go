@@ -3,8 +3,10 @@ package clickhousedb_test
 import (
 	"log"
 	"os"
+	"strconv"
 	"testing"
 
+	"github.com/av-belyakov/golang_structures_and_algorithms/databaseinteractions/clickhousedb"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +19,28 @@ func TestClickhouseGoPackage(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	conn, err := newConnect(t.Context())
+	/*
+		Database: os.Getenv("CLICKHOUSE_SERVER_DB"),
+		Username: os.Getenv("CLICKHOUSE_SERVER_USER"),
+		Password: os.Getenv("CLICKHOUSE_SERVER_PASSWORD"),
+	*/
+	port, err := strconv.ParseInt(os.Getenv("CLICKHOUSE_SERVER_YOUR_OWN_PORT"), 10, 32)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client, err := clickhousedb.New(
+		clickhousedb.WithHost(os.Getenv("CLICKHOUSE_SERVER_HOST")),
+		clickhousedb.WithPort(int(port)),
+		clickhousedb.WithDatabase(os.Getenv("CLICKHOUSE_SERVER_DB")),
+		clickhousedb.WithUser(os.Getenv("CLICKHOUSE_SERVER_USER")),
+		clickhousedb.WithPassword(os.Getenv("CLICKHOUSE_SERVER_PASSWORD")),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	conn, err := client.Connect(t.Context())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,7 +74,7 @@ func TestClickhouseGoPackage(t *testing.T) {
 		})
 
 		t.Run("Тест 2.2. Заполняем тестовую таблицу данными", func(t *testing.T) {
-			for range 100 {
+			for range 350 {
 				assert.NoError(t, conn.Exec(t.Context(),
 					`INSERT INTO real_estate_objects_example(
 					uuid,
@@ -87,6 +110,7 @@ func TestClickhouseGoPackage(t *testing.T) {
 	//})
 
 	t.Cleanup(func() {
+		os.Unsetenv("CLICKHOUSE_SERVER_HOST")
 		os.Unsetenv("CLICKHOUSE_SERVER_YOUR_OWN_PORT")
 
 		os.Unsetenv("CLICKHOUSE_SERVER_DB")

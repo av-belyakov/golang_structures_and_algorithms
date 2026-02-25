@@ -2,23 +2,23 @@ package clickhousedb
 
 import (
 	"context"
-	"crypto/tls"
-	"database/sql/driver"
+	"database/sql"
 	"fmt"
-	"net"
-	"os"
-	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 )
 
-func (chc *ClickHouseClient) Connect(ctx context.Context) (driver.Conn, error) {
+// Connect выполняет подключение к БД и реализует интерфейс clickhouse.Conn
+func (chc *ClickHouseClient) Connect(ctx context.Context) (clickhouse.Conn, error) {
 	conn, err := clickhouse.Open(chc.options)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := conn.Ping(ctx); err != nil {
+	chc.ctx = ctx
+	chc.connect = conn
+
+	if err := chc.connect.Ping(ctx); err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {
 			fmt.Printf("Exception [%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
 		}
@@ -26,12 +26,26 @@ func (chc *ClickHouseClient) Connect(ctx context.Context) (driver.Conn, error) {
 		return nil, err
 	}
 
-	chc.ctx = ctx
-	chc.connect = conn
-
-	return conn, nil
+	return chc.connect, nil
 }
 
+// ConnectDB использует общую структуру драйвера database/sql
+func (chc *ClickHouseClient) ConnectDB(ctx context.Context) (*sql.DB, error) {
+	chc.ctx = ctx
+	chc.connectDb = clickhouse.OpenDB(chc.options)
+
+	if err := chc.connectDb.Ping(); err != nil {
+		if exception, ok := err.(*clickhouse.Exception); ok {
+			fmt.Printf("Exception [%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
+		}
+
+		return nil, err
+	}
+
+	return chc.connectDb, nil
+}
+
+/*
 func NewClickhouseConnect(ctx context.Context) (driver.Conn, error) {
 	conn, err := clickhouse.Open(&clickhouse.Options{
 		Addr: []string{net.JoinHostPort("127.0.0.1", os.Getenv("CLICKHOUSE_SERVER_YOUR_OWN_PORT"))},
@@ -85,3 +99,4 @@ func NewClickhouseConnect(ctx context.Context) (driver.Conn, error) {
 	}
 	return conn, nil
 }
+*/
