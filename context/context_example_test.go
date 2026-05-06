@@ -100,10 +100,27 @@ func TestContextExample(t *testing.T) {
 		t.Run("Test 5.1. Контекст отменяется функция в AfterFunc не вызывается", func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), time.Duration(time.Second*5))
 
-			context.AfterFunc(ctx, func() {
-				log.Println(" вызывается функция AfterFunc в Test 5.1")
+			stop1 := context.AfterFunc(ctx, func() {
+				log.Println("___ вызывается функция AfterFunc в Test 5.1")
 			})
+
+			log.Println("работа завершается до того как истекает context.WithTimeout, отменяем context.AfterFunc")
+
+			stop1()
+			cancel()
 		})
-		t.Run("Test 5.1. Контекст не отменяетсяфункция в AfterFunc вызывается", func(t *testing.T) {})
+
+		t.Run("Test 5.2. Контекст не отменяется функция в AfterFunc вызывается", func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(t.Context(), time.Duration(time.Millisecond*5))
+			defer cancel()
+
+			context.AfterFunc(ctx, func() {
+				log.Println("___ вызывается функция AfterFunc в Test 5.2")
+			})
+
+			log.Println("context.WithTimeout истекает до завершения работы, вызывается функция в context.AfterFunc")
+
+			time.Sleep(1 * time.Second)
+		})
 	})
 }
