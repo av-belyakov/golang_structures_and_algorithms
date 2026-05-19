@@ -1,4 +1,5 @@
 // Примеры обхода директорий
+// Примеры обхода директорий
 package traversingdirectories_test
 
 import (
@@ -21,10 +22,11 @@ type fileInfo struct {
 	isDir bool
 }
 
-func TestWalrDir(t *testing.T) {
+func TestWalkDir(t *testing.T) {
 	list := map[string]fileInfo{}
 
-	err := filepath.WalkDir("../", func(path string, d fs.DirEntry, err error) error {
+	//err := filepath.WalkDir("../", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir("../../algorithms/", func(path string, d fs.DirEntry, err error) error {
 		if err != nil && err != fs.ErrNotExist {
 			return err
 		}
@@ -46,7 +48,14 @@ func TestWalrDir(t *testing.T) {
 	assert.NoError(t, err)
 
 	for k, v := range list {
-		fmt.Printf("path:'%s'\n\tisDir:'%t'\n\tname:'%s'\n\tsize:'%d'\n", k, v.isDir, v.name, v.size)
+		fmt.Printf("\npath:%s\n", k)
+		if v.isDir {
+			fmt.Printf("\tdirectory:%s\n", v.name)
+		} else {
+			fmt.Printf("\tfile:%s\n", v.name)
+		}
+
+		fmt.Printf("\tsize:%d byte\n", v.size)
 	}
 
 	assert.NotEqual(t, len(list), 0)
@@ -72,8 +81,8 @@ func TestCalulateDirSize(t *testing.T) {
 		return nil
 	})
 
-	t.Log("Direcotory size:", size)
-	t.Log("Count directory:", countDir)
+	t.Log("Всего директорий:", countDir)
+	t.Log("Общий размер директорий:", size)
 
 	assert.NotEqual(t, size, 0)
 }
