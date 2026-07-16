@@ -30,6 +30,8 @@ mc admin user list miniouserroot # проверяем наличие польз�
 
 ![example_1](images/image_1.png)
 
+По терминологии MinIO access_key по терминологии MinIO это username, secret_key - password
+
 ### Как создать нового пользователя.
 
 #### 1. Создаём новый alias:
