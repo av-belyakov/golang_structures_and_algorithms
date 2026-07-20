@@ -60,17 +60,27 @@ bin/elasticsearch-keystore add s3.client.default.secret_key
 # Здесь default — это дефолтное имя клиента, которое вы будете использовать при регистрации репозитория
 ```
 
-То есть если в настройках MinIO есть MINIO_ROOT_USER=minioadmin, то это же имя нужно использовать в строке s3.client.<имя клиента>.access_key и s3.client.<имя клиента>.secret_key.
+после добавления access и secret нужно сделать:
 
-По терминологии MinIO access_key - username, secret_key - password.
+```bash
+docker compose restart <source_container_id>
+```
+
+что бы просмотреть список существующих учетных данных выполняем:
+
+```bash
+bin/elasticsearch-keystore list
+```
+
+То есть если в настройках MinIO есть MINIO_ROOT_USER=minioadmin, то это же имя нужно использовать в строке s3.client.<имя клиента>.access_key и s3.client.<имя клиента>.secret_key. По терминологии MinIO access_key - username, secret_key - password.
 
 Далее нужно выполнить:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-minio-repository' -H 'Content-type: application/json' -d '{
+curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
   "type": "s3",
   "settings": {
-    "bucket": "elasticsearch-backup",
+    "bucket": "my-backup",
     "client": "default",
     "endpoint": "https://minio:9000",
     "protocol": "https",
@@ -82,21 +92,155 @@ curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-
 }'
 ```
 
-должен быть получен ответ:
+Должен быть получен ответ:
 
 ```json
 { "acknowledged": true }
 ```
 
+Если получаем ощибку типа "repository_verification_exception", то проблеммы с авторизационными данными (неверный логин или пароль) или что более вероятно публичный сертификат не был добавлен в хранилище сертификатов elasticsearch.
+
 Создаем снапшот всех индексов и глобального состояния кластера:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-minio-repository/snapshot_1?wait_for_completion=true'
+curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-minio-snapshot/snapshot_1?wait_for_completion=true'
 ```
 
 параметр **wait_for_completion=true** позволяет дождатся завершения выполнения задачи.
 
+Проверяем наличие снапшота:
+
+```bash
+curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X POST "http://localhost:9200/_snapshot/my-minio-snapshot/_verify?pretty"
+```
+
+Посмотрим все имеющиеся снапшоты:
+
+```bash
+curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/_snapshot/my-minio-snapshot/_all?pretty"
+```
+
+Так можно посмотреть информацию о конкретном индексе:
+
+```bash
+curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/testtt.module_placeholderdb_alert_rcmnvs_2026_7?pretty"
+```
+
+Смотрим количество документов в индексе:
+
+```bash
+curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/logs.placeholder_doc-base-db_july_2026/_count?pretty"
+```
+
+Проверка данных. Ищем первые 10 документов в индексе:
+
+```bash
+curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/testtt.module_placeholderdb_alert_rcmnvs_2026_7/_search?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "match_all": {}
+    },
+    "size": 10
+  }'
+```
+
+Посмотреть все существующие индексы:
+
+```bash
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X GET "http://localhost:9211/_cat/indices?v&pretty"
+```
+
+На новом Elasticsearch, на который выполняется миграция данных со старого нужно зарегистрировать репозиторий MInIO:
+
+```bash
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
+  "type": "s3",
+  "settings": {
+    "bucket": "my-backup",
+    "client": "default",
+    "endpoint": "https://minio:9000",
+    "protocol": "https",
+    "path_style_access": true,
+    "region": "us-east-1",
+    "readonly": false,
+    "disable_chunked_encoding": true
+  }
+}'
+```
+
+Можно удалить все существующие индексы или удалить только пользовательские индексы:
+
+```bash
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X DELETE "http://localhost:9211/*"
+
+# или что бы удалить всё выполнить
+curl -s -u elastic:2nPERtdYz1RYgawe8sI4 -X GET "http://localhost:9211/_cat/indices"| awk '{print $3}'| while read -r index; do
+  if [ -z "$index" ] || [[ "$index" == \#* ]]; then
+    continue
+  fi
+
+  curl -u elastic:2nPERtdYz1RYgawe8sI4 -X DELETE "http://localhost:9211/$index"
+done
+```
+
+удалять системные индексы не рекомендуется.
+
+Востанавливаем снапшот всех индексов, это предпочтительно делать после удаления всех индексов:
+
+```bash
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "indices": "*",
+    "ignore_unavailable": true,
+    "include_global_state": false
+  }'
+```
+
+Востанавливаем снапшот индексов ИСКЛЮЧАЯ все системные индексы:
+
+```bash
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "indices": "+*,-.*,-ilm-history-*,-watcher-history-*,-security-*,-kibana-*,-elastic-*,-.apm-*,-.monitoring-*,-.ml-*,-.transform-*,-.slm-history-*,-.async-search-*,-.kibana-event-log-*,-.tasks-*,-.management-*",
+    "ignore_unavailable": true,
+    "include_global_state": false
+  }'
+```
+
+инспекция востановленных индексов:
+
+```bash
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X GET "http://localhost:9211/_cluster/allocation/explain?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "index": "testtt.module_placeholderdb_alert_rcmnvs_2026_7",
+    "shard": 0,
+    "primary": true
+  }'
+```
+
+где, "+\*" - добавить все индексы,
+"-.\*" - исключить индексы начинающиеся на ".".
+
+Востанавливаем, с переименованием, снапшот всех индексов и глобального состояния кластера:
+
+```bash
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "indices": "*",
+    "ignore_unavailable": true,
+    "include_global_state": false,
+    "include_aliases": true
+  }'
+```
+
 --------------------------------------------- Всё что ниже для удаления ---------------------------------------------
+
+## Для elasticsearch_source
 
 Changed password for user apm_system
 PASSWORD apm_system = a6bXaBVEwbvCmjasl7Vz
@@ -118,3 +262,26 @@ PASSWORD remote_monitoring_user = W1IWVgKdzPXIPlgLqvjU
 
 Changed password for user elastic
 PASSWORD elastic = jYQ758IbxEnXxF3SM0T0
+
+# Для elasticsearch_recipient
+
+Changed password for user apm_system
+PASSWORD apm_system = NX37YfeFDwLo98x3xLE5
+
+Changed password for user kibana_system
+PASSWORD kibana_system = 8Uvquh13IqtTa5pWMHDS
+
+Changed password for user kibana
+PASSWORD kibana = 8Uvquh13IqtTa5pWMHDS
+
+Changed password for user logstash_system
+PASSWORD logstash_system = LkmUZk5vApAZMl4Qjpry
+
+Changed password for user beats_system
+PASSWORD beats_system = UZUpkBaUy5x96mEZn9uJ
+
+Changed password for user remote_monitoring_user
+PASSWORD remote_monitoring_user = KJfBhkfN9RlfkbUTHYIz
+
+Changed password for user elastic
+PASSWORD elastic = 2nPERtdYz1RYgawe8sI4

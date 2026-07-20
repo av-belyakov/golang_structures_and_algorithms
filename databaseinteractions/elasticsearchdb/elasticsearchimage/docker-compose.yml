@@ -1,11 +1,9 @@
 services:
-  elasticsearch:
+  elasticsearch_old:
     image: my-elasticsearch:with-minio-cert
     #docker.elastic.co/elasticsearch/elasticsearch:9.3.0
     #elasticsearch:7.17.28
-    container_name: elasticsearch
-    env_file:
-      - .env
+    container_name: elasticsearch_source
     environment:
       - node.name=elasticsearch
       - cluster.name=es-docker-cluster
@@ -26,8 +24,8 @@ services:
       - http.cors.allow-credentials=true
     volumes:
       - es_data:/usr/share/elasticsearch/data
-      - ./minio/certs/public.crt:/usr/share/elasticsearch/config/minio-cert.pem:ro
-      - ./entrypoint.sh:/usr/share/elasticsearch/config/entrypoint.sh:ro
+    #  - ./minio/certs/public.crt:/usr/share/elasticsearch/config/minio-cert.pem:ro
+    #      - ./entrypoint.sh:/usr/share/elasticsearch/config/entrypoint.sh:ro
     #      - ./certs:/usr/share/elasticsearch/config/certs
     ulimits:
       memlock:
@@ -38,23 +36,92 @@ services:
     networks:
       - elastic-network
 
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.15.0
+  elasticsearch_new:
+    image: my-elasticsearch:with-minio-cert
+    #docker.elastic.co/elasticsearch/elasticsearch:9.3.0
+    #elasticsearch:7.17.28
+    container_name: elasticsearch_recipient
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node # если в кластере один узел
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - xpack.security.enabled=true
+      # сертификаты нужны для защиты взаимодействия между узлами кластера
+      # подробнее https://www.elastic.co/docs/deploy-manage/security/set-up-basic-security
+      #      - xpack.security.transport.ssl.enabled=true
+      #      - xpack.security.transport.ssl.verification_mode=certificate
+      #      - xpack.security.transport.ssl.keystore.path=certs/elastic-certificates.p12
+      #      - xpack.security.transport.ssl.truststore.path=certs/elastic-certificates.p12
+      # всё что ниже это настройки для elasticvue web
+      - http.cors.enabled=true
+      - http.cors.allow-origin=http://localhost:8484
+      - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
+      - http.cors.allow-credentials=true
+    #entrypoint: ["/usr/share/elasticsearch/config/entrypoint.sh"]
+    volumes:
+      - es_new_data:/usr/share/elasticsearch/data
+    #  - ./minio/certs/public.crt:/usr/share/elasticsearch/config/minio-cert.pem:ro
+    #  - ./entrypoint.sh:/usr/share/elasticsearch/config/entrypoint.sh:ro
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9211:9200"
+    networks:
+      - elastic-network
+
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  # Здесь, для теста успешности миграции данных с одного elasticsearch на другой elasticsearch нужно развернуть
+  # второй elasticsearch который будет служить получателем данных
+
+  kibana_es_old:
+    image: docker.elastic.co/kibana/kibana:9.3.0
+    #docker.elastic.co/kibana/kibana:8.15.0
     #docker.elastic.co/kibana/kibana:9.3.0
     #kibana:7.17.28
-    container_name: kibana
+    container_name: kibana_es_source
     depends_on:
-      - elasticsearch
+      - elasticsearch_old
+    env_file:
+      - .env
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=MhaRZHuVqrpD8pPcrHeo
+      - ELASTICSEARCH_HOSTS=http://elasticsearch_old:9200
+      - ELASTICSEARCH_USERNAME=${KIBANA_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ES_OLD_PASSWORD}
       - XPACK_MONITORING_ENABLED=true
       - XPACK_XPACK_MAIN_ENABLED=true
     volumes:
-      - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+      - ./kibana/config/kibana_old.yml:/usr/share/kibana/config/kibana.yml:ro
     ports:
       - "5601:5601"
+    networks:
+      - elastic-network
+
+  kibana_es_new:
+    image: docker.elastic.co/kibana/kibana:9.3.0
+    #kibana:7.17.28
+    container_name: kibana_es_recipient
+    depends_on:
+      - elasticsearch_new
+    env_file:
+      - .env
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch_new:9200
+      - ELASTICSEARCH_USERNAME=${KIBANA_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ES_NEW_PASSWORD}
+      - XPACK_MONITORING_ENABLED=true
+      - XPACK_XPACK_MAIN_ENABLED=true
+      - SERVER_NAME=kibana_new
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PUBLICBASEURL=http://localhost:5601
+      - MONITORING_UI_CONTAINER_ELASTICSEARCH_ENABLED=true
+      - XPACK_MONITORING_UI_CONTAINER_ELASTICSEARCH_ENABLED=true
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=none
+    ports:
+      - "5611:5601"
     networks:
       - elastic-network
 
@@ -68,7 +135,7 @@ services:
     volumes:
       - ./elasticvue/config/clusters.json:/usr/share/nginx/html/api/default_clusters.json:rw
     depends_on:
-      - elasticsearch
+      - elasticsearch_old
     networks:
       - elastic-network
     restart: unless-stopped
@@ -98,6 +165,7 @@ services:
 
 volumes:
   es_data:
+  es_new_data:
 
 networks:
   elastic-network:
