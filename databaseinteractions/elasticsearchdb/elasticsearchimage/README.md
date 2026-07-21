@@ -90,6 +90,7 @@ curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-
     "disable_chunked_encoding": true
   }
 }'
+#    "endpoint": "https://192.168.9.53:9900",
 ```
 
 Должен быть получен ответ:
@@ -167,6 +168,21 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-
     "disable_chunked_encoding": true
   }
 }'
+#  "endpoint": "https://192.168.9.53:9900",
+
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
+  "type": "s3",
+  "settings": {
+    "bucket": "my-backup",
+    "client": "default",
+    "endpoint": "https://192.168.9.53:9900",
+    "protocol": "https",
+    "path_style_access": true,
+    "region": "us-east-1",
+    "readonly": false,
+    "disable_chunked_encoding": true
+  }
+}'
 ```
 
 Можно удалить все существующие индексы или удалить только пользовательские индексы:
@@ -201,7 +217,7 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
 Востанавливаем снапшот индексов ИСКЛЮЧАЯ все системные индексы:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?&pretty&wait_for_completion=true" \
   -H "Content-Type: application/json" \
   -d '{
     "indices": "+*,-.*,-ilm-history-*,-watcher-history-*,-security-*,-kibana-*,-elastic-*,-.apm-*,-.monitoring-*,-.ml-*,-.transform-*,-.slm-history-*,-.async-search-*,-.kibana-event-log-*,-.tasks-*,-.management-*",
@@ -238,7 +254,7 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
   }'
 ```
 
---------------------------------------------- Всё что ниже для удаления ---------------------------------------------
+# --------------------------------------------- Временные тестовые учетные данные ---------------------------------------------
 
 ## Для elasticsearch_source
 
