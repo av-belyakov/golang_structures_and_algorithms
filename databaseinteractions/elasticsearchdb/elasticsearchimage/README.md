@@ -90,6 +90,7 @@ curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-
     "disable_chunked_encoding": true
   }
 }'
+#    "endpoint": "https://192.168.9.53:9900",
 ```
 
 Должен быть получен ответ:
@@ -167,6 +168,21 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-
     "disable_chunked_encoding": true
   }
 }'
+#  "endpoint": "https://192.168.9.53:9900",
+
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
+  "type": "s3",
+  "settings": {
+    "bucket": "my-backup",
+    "client": "default",
+    "endpoint": "https://192.168.9.53:9900",
+    "protocol": "https",
+    "path_style_access": true,
+    "region": "us-east-1",
+    "readonly": false,
+    "disable_chunked_encoding": true
+  }
+}'
 ```
 
 Можно удалить все существующие индексы или удалить только пользовательские индексы:
@@ -201,7 +217,7 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
 Востанавливаем снапшот индексов ИСКЛЮЧАЯ все системные индексы:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
+curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?&pretty&wait_for_completion=true" \
   -H "Content-Type: application/json" \
   -d '{
     "indices": "+*,-.*,-ilm-history-*,-watcher-history-*,-security-*,-kibana-*,-elastic-*,-.apm-*,-.monitoring-*,-.ml-*,-.transform-*,-.slm-history-*,-.async-search-*,-.kibana-event-log-*,-.tasks-*,-.management-*",
@@ -238,30 +254,30 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
   }'
 ```
 
---------------------------------------------- Всё что ниже для удаления ---------------------------------------------
+# --------------------------------------------- Временные тестовые учетные данные ---------------------------------------------
 
 ## Для elasticsearch_source
 
 Changed password for user apm_system
-PASSWORD apm_system = a6bXaBVEwbvCmjasl7Vz
+PASSWORD apm_system = NZ8Ycx2VzT940AApBlRz
 
 Changed password for user kibana_system
-PASSWORD kibana_system = MhaRZHuVqrpD8pPcrHeo
+PASSWORD kibana_system = RLq80sjL4xXV5kdDoDMJ
 
 Changed password for user kibana
-PASSWORD kibana = MhaRZHuVqrpD8pPcrHeo
+PASSWORD kibana = RLq80sjL4xXV5kdDoDMJ
 
 Changed password for user logstash_system
-PASSWORD logstash_system = 5MDvThNxGY6LCLkH8Ejd
+PASSWORD logstash_system = HeJ4vjdVY58Dy6jPFMe5
 
 Changed password for user beats_system
-PASSWORD beats_system = vTbWDsLwcEBOgiZClFoX
+PASSWORD beats_system = hWgdM185WKz1ISK2mhFA
 
 Changed password for user remote_monitoring_user
-PASSWORD remote_monitoring_user = W1IWVgKdzPXIPlgLqvjU
+PASSWORD remote_monitoring_user = hiAqOpatxddlftFeNBMl
 
 Changed password for user elastic
-PASSWORD elastic = jYQ758IbxEnXxF3SM0T0
+PASSWORD elastic = bFZAfJftvX5NpJJsBhLL
 
 # Для elasticsearch_recipient
 

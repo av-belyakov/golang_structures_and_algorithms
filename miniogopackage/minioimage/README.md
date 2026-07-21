@@ -22,9 +22,9 @@ docker-compose up -d
 ```bash
 docker exec -it minio-test bash
 mc alias list # смотрим список доступных TARGETS
-mc alias set miniouserroot https://localhost:9000 <имя root пользователя> password # берем имя и пароль из docker-compose.yml если нет root из docker-compose.yml, то создаём его (могут быть проблемы с сертификатом, надо попробовать несколько раз, то есть повторить команду два и более раз, обычно на второй раз команда срабатывает успешно)
-mc admin user add miniouserroot <user name> <passwd> # создаём нового пользователя
-mc admin policy attach miniouserroot readwrite --user gcm # добавляем политику доступа
+mc alias set miniouserroot https://localhost:9000 <имя root пользователя> <password> # берем имя и пароль из docker-compose.yml если нет root из docker-compose.yml, то создаём его (могут быть проблемы с сертификатом, надо попробовать несколько раз, то есть повторить команду два и более раз, обычно на второй раз команда срабатывает успешно)
+mc admin user add miniouserroot <user name> <password> # создаём нового пользователя
+mc admin policy attach miniouserroot readwrite --user <user_name> # добавляем политику доступа
 mc admin user list miniouserroot # проверяем наличие пользователя
 ```
 
@@ -92,19 +92,45 @@ mc adminuser remove miniotuserroot gcm
 mc admin user disable miniotuserroot gcm
 ```
 
-сначала отключаем
+#### 9. Удаление пользователя
+
+сначала отключаем пользователя
 
 ```bash
 mc admin user remove miniotuserroot gcm
 ```
 
-удаляем
+а затем удаляем его
 
 ```bash
-mc admin user add miniouserroot <пользователь> <пароль>
+mc admin user rm miniouserroot <пользователь>
 ```
 
-создаём нового пользователя
+#### 10. Список доступных бакетов
+
+```bash
+mc ls miniotuserroot
+```
+
+#### 11. Создание нового бакета
+
+```bash
+mc mb miniotuserroot/<bucket-name>
+```
+
+#### 12. Удаление одиночного файла или бакета целиком
+
+```bash
+# удаление одиночного файла
+mc rm <aliase-name>/<bucket-name>/<file-name>
+
+# удаление целой директории
+mc rm --recursive <alias-name>/<bucket-name>/<folder-name>/
+
+# удаление бакета, если бакет не пуст операция не будет выполнена
+# нужно добавить параметр --force для принудительного удаления
+mc rb miniotuserroot/<bucket-name>
+```
 
 Включение/отключение пользователя:
 
