@@ -259,25 +259,25 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
 ## Для elasticsearch_source
 
 Changed password for user apm_system
-PASSWORD apm_system = a6bXaBVEwbvCmjasl7Vz
+PASSWORD apm_system = NZ8Ycx2VzT940AApBlRz
 
 Changed password for user kibana_system
-PASSWORD kibana_system = MhaRZHuVqrpD8pPcrHeo
+PASSWORD kibana_system = RLq80sjL4xXV5kdDoDMJ
 
 Changed password for user kibana
-PASSWORD kibana = MhaRZHuVqrpD8pPcrHeo
+PASSWORD kibana = RLq80sjL4xXV5kdDoDMJ
 
 Changed password for user logstash_system
-PASSWORD logstash_system = 5MDvThNxGY6LCLkH8Ejd
+PASSWORD logstash_system = HeJ4vjdVY58Dy6jPFMe5
 
 Changed password for user beats_system
-PASSWORD beats_system = vTbWDsLwcEBOgiZClFoX
+PASSWORD beats_system = hWgdM185WKz1ISK2mhFA
 
 Changed password for user remote_monitoring_user
-PASSWORD remote_monitoring_user = W1IWVgKdzPXIPlgLqvjU
+PASSWORD remote_monitoring_user = hiAqOpatxddlftFeNBMl
 
 Changed password for user elastic
-PASSWORD elastic = jYQ758IbxEnXxF3SM0T0
+PASSWORD elastic = bFZAfJftvX5NpJJsBhLL
 
 # Для elasticsearch_recipient
 

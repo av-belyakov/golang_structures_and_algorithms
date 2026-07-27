@@ -1,8 +1,6 @@
 services:
   elasticsearch_old:
     image: my-elasticsearch:with-minio-cert
-    #docker.elastic.co/elasticsearch/elasticsearch:9.3.0
-    #elasticsearch:7.17.28
     container_name: elasticsearch_source
     environment:
       - node.name=elasticsearch
@@ -38,8 +36,6 @@ services:
 
   elasticsearch_new:
     image: my-elasticsearch:with-minio-cert
-    #docker.elastic.co/elasticsearch/elasticsearch:9.3.0
-    #elasticsearch:7.17.28
     container_name: elasticsearch_recipient
     environment:
       - node.name=elasticsearch
@@ -79,9 +75,8 @@ services:
 
   kibana_es_old:
     image: docker.elastic.co/kibana/kibana:9.3.0
-    #docker.elastic.co/kibana/kibana:8.15.0
-    #docker.elastic.co/kibana/kibana:9.3.0
-    #kibana:7.17.28
+    #image: docker.elastic.co/kibana/kibana:8.15.0
+    #image: docker.elastic.co/kibana/kibana:7.14.1
     container_name: kibana_es_source
     depends_on:
       - elasticsearch_old
