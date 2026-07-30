@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	"github.com/elastic/go-elasticsearch/v9"
 	"github.com/elastic/go-elasticsearch/v9/esapi"
 
@@ -20,31 +21,33 @@ import (
 
 // Connect соединение с БД
 func (es *EsClient) Connect(ctx context.Context) error {
-	conf := elasticsearch.Config{
-		Addresses: []string{
-			fmt.Sprintf("http://%s:%d", es.settings.host, es.settings.port),
-		},
-		Transport: &http.Transport{
-			MaxIdleConns:          10,              //число открытых TCP-соединений, которые в данный момент не используются
-			IdleConnTimeout:       1 * time.Second, //время, через которое закрываются такие неактивные соединения
-			MaxIdleConnsPerHost:   10,              //число неактивных TCP-соединений, которые допускается устанавливать на один хост
-			ResponseHeaderTimeout: 2 * time.Second, //время в течении которого сервер ожидает получение ответа после записи заголовка запроса
-			DialContext: (&net.Dialer{
-				Timeout: 3 * time.Second,
-				//KeepAlive: 1 * time.Second,
-			}).DialContext,
-		}}
+	var withElasticAuthMethod elasticsearch.Option
 
 	if es.settings.apiKey != "" {
-		conf.APIKey = es.settings.apiKey
+		withElasticAuthMethod = elasticsearch.WithAPIKey(es.settings.apiKey)
 	} else if es.settings.user != "" && es.settings.passwd != "" {
-		conf.Username = es.settings.user
-		conf.Password = es.settings.passwd
+		withElasticAuthMethod = elasticsearch.WithBasicAuth(es.settings.user, es.settings.passwd)
 	} else {
 		return errors.New("the value of 'apiKey' or 'user' and 'passwd' cannot be empty")
 	}
 
-	client, err := elasticsearch.NewClient(conf)
+	client, err := elasticsearch.New(
+		elasticsearch.WithAddresses(fmt.Sprintf("http://%s:%d", es.settings.host, es.settings.port)),
+		withElasticAuthMethod,
+		elasticsearch.WithTransportOptions(
+			elastictransport.WithTransport(&http.Transport{
+				MaxIdleConns:          10,              //число открытых TCP-соединений, которые в данный момент не используются
+				IdleConnTimeout:       1 * time.Second, //время, через которое закрываются такие неактивные соединения
+				MaxIdleConnsPerHost:   10,              //число неактивных TCP-соединений, которые допускается устанавливать на один хост
+				ResponseHeaderTimeout: 2 * time.Second, //время в течении которого сервер ожидает получение ответа после записи заголовка запроса
+				DialContext: (&net.Dialer{
+					Timeout: 3 * time.Second,
+					//KeepAlive: 1 * time.Second,
+				}).DialContext,
+			},
+			),
+		),
+	)
 	if err != nil {
 		return err
 	}
