@@ -1,6 +1,7 @@
 services:
   elasticsearch_old:
-    image: my-elasticsearch:with-minio-cert
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.1
+    #image: my-elasticsearch:with-minio-cert
     container_name: elasticsearch_source
     environment:
       - node.name=elasticsearch
@@ -20,8 +21,11 @@ services:
       - http.cors.allow-origin=http://localhost:8484
       - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
       - http.cors.allow-credentials=true
+      # настройка доступа к nfs серверу
+      - path.repo=/usr/share/elasticsearch/snapshots
     volumes:
       - es_data:/usr/share/elasticsearch/data
+      - /media/nfs_share:/usr/share/elasticsearch/snapshots
     #  - ./minio/certs/public.crt:/usr/share/elasticsearch/config/minio-cert.pem:ro
     #      - ./entrypoint.sh:/usr/share/elasticsearch/config/entrypoint.sh:ro
     #      - ./certs:/usr/share/elasticsearch/config/certs
@@ -35,7 +39,8 @@ services:
       - elastic-network
 
   elasticsearch_new:
-    image: my-elasticsearch:with-minio-cert
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.19
+    #image: my-elasticsearch:with-minio-cert
     container_name: elasticsearch_recipient
     environment:
       - node.name=elasticsearch
@@ -55,9 +60,12 @@ services:
       - http.cors.allow-origin=http://localhost:8484
       - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
       - http.cors.allow-credentials=true
+      # настройка доступа к nfs серверу
+      - path.repo=/usr/share/elasticsearch/snapshots
     #entrypoint: ["/usr/share/elasticsearch/config/entrypoint.sh"]
     volumes:
       - es_new_data:/usr/share/elasticsearch/data
+      - /media/nfs_share:/usr/share/elasticsearch/snapshots
     #  - ./minio/certs/public.crt:/usr/share/elasticsearch/config/minio-cert.pem:ro
     #  - ./entrypoint.sh:/usr/share/elasticsearch/config/entrypoint.sh:ro
     ulimits:
@@ -74,9 +82,9 @@ services:
   # второй elasticsearch который будет служить получателем данных
 
   kibana_es_old:
-    image: docker.elastic.co/kibana/kibana:9.3.0
+    image: docker.elastic.co/kibana/kibana:7.14.1
     #image: docker.elastic.co/kibana/kibana:8.15.0
-    #image: docker.elastic.co/kibana/kibana:7.14.1
+    #image: docker.elastic.co/kibana/kibana:9.3.0
     container_name: kibana_es_source
     depends_on:
       - elasticsearch_old
@@ -96,8 +104,9 @@ services:
       - elastic-network
 
   kibana_es_new:
-    image: docker.elastic.co/kibana/kibana:9.3.0
-    #kibana:7.17.28
+    image: docker.elastic.co/kibana/kibana:8.19.19
+    #image: docker.elastic.co/kibana/kibana:7.14.1
+    #image: docker.elastic.co/kibana/kibana:9.3.0
     container_name: kibana_es_recipient
     depends_on:
       - elasticsearch_new

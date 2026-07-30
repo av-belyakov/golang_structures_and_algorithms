@@ -77,7 +77,7 @@ bin/elasticsearch-keystore list
 Далее нужно выполнить:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
+curl -u elastic:<пароль> -X PUT 'http://localhost:9200/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
   "type": "s3",
   "settings": {
     "bucket": "my-backup",
@@ -104,7 +104,7 @@ curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-
 Создаем снапшот всех индексов и глобального состояния кластера:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-minio-snapshot/snapshot_1?wait_for_completion=true'
+curl -u elastic:<пароль> -X PUT 'http://localhost:9200/_snapshot/my-minio-snapshot/snapshot_1?wait_for_completion=true'
 ```
 
 параметр **wait_for_completion=true** позволяет дождатся завершения выполнения задачи.
@@ -112,31 +112,31 @@ curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X PUT 'http://localhost:9200/_snapshot/my-
 Проверяем наличие снапшота:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X POST "http://localhost:9200/_snapshot/my-minio-snapshot/_verify?pretty"
+curl -u elastic:<пароль> -X POST "http://localhost:9200/_snapshot/my-minio-snapshot/_verify?pretty"
 ```
 
 Посмотрим все имеющиеся снапшоты:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/_snapshot/my-minio-snapshot/_all?pretty"
+curl -u elastic:<пароль> -X GET "http://localhost:9200/_snapshot/my-minio-snapshot/_all?pretty"
 ```
 
 Так можно посмотреть информацию о конкретном индексе:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/testtt.module_placeholderdb_alert_rcmnvs_2026_7?pretty"
+curl -u elastic:<пароль> -X GET "http://localhost:9200/testtt.module_placeholderdb_alert_rcmnvs_2026_7?pretty"
 ```
 
 Смотрим количество документов в индексе:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/logs.placeholder_doc-base-db_july_2026/_count?pretty"
+curl -u elastic:<пароль> -X GET "http://localhost:9200/logs.placeholder_doc-base-db_july_2026/_count?pretty"
 ```
 
 Проверка данных. Ищем первые 10 документов в индексе:
 
 ```bash
-curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/testtt.module_placeholderdb_alert_rcmnvs_2026_7/_search?pretty" \
+curl -u elastic:<пароль> -X GET "http://localhost:9200/testtt.module_placeholderdb_alert_rcmnvs_2026_7/_search?pretty" \
   -H "Content-Type: application/json" \
   -d '{
     "query": {
@@ -149,13 +149,13 @@ curl -u elastic:jYQ758IbxEnXxF3SM0T0 -X GET "http://localhost:9200/testtt.module
 Посмотреть все существующие индексы:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X GET "http://localhost:9211/_cat/indices?v&pretty"
+curl -u elastic:<пароль> -X GET "http://localhost:9211/_cat/indices?v&pretty"
 ```
 
 На новом Elasticsearch, на который выполняется миграция данных со старого нужно зарегистрировать репозиторий MInIO:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
+curl -u elastic:<пароль> -X PUT 'http://localhost:9211/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
   "type": "s3",
   "settings": {
     "bucket": "my-backup",
@@ -170,7 +170,7 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-
 }'
 #  "endpoint": "https://192.168.9.53:9900",
 
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
+curl -u elastic:<пароль> -X PUT 'http://localhost:9211/_snapshot/my-minio-snapshot' -H 'Content-type: application/json' -d '{
   "type": "s3",
   "settings": {
     "bucket": "my-backup",
@@ -188,15 +188,15 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X PUT 'http://localhost:9211/_snapshot/my-
 Можно удалить все существующие индексы или удалить только пользовательские индексы:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X DELETE "http://localhost:9211/*"
+curl -u elastic:<пароль> -X DELETE "http://localhost:9211/*"
 
 # или что бы удалить всё выполнить
-curl -s -u elastic:2nPERtdYz1RYgawe8sI4 -X GET "http://localhost:9211/_cat/indices"| awk '{print $3}'| while read -r index; do
+curl -s -u elastic:<пароль> -X GET "http://localhost:9211/_cat/indices"| awk '{print $3}'| while read -r index; do
   if [ -z "$index" ] || [[ "$index" == \#* ]]; then
     continue
   fi
 
-  curl -u elastic:2nPERtdYz1RYgawe8sI4 -X DELETE "http://localhost:9211/$index"
+  curl -u elastic:<пароль> -X DELETE "http://localhost:9211/$index"
 done
 ```
 
@@ -205,7 +205,7 @@ done
 Востанавливаем снапшот всех индексов, это предпочтительно делать после удаления всех индексов:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
+curl -u elastic:<пароль> -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
   -H "Content-Type: application/json" \
   -d '{
     "indices": "*",
@@ -217,7 +217,7 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
 Востанавливаем снапшот индексов ИСКЛЮЧАЯ все системные индексы:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?&pretty&wait_for_completion=true" \
+curl -u elastic:<пароль> -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?&pretty&wait_for_completion=true" \
   -H "Content-Type: application/json" \
   -d '{
     "indices": "+*,-.*,-ilm-history-*,-watcher-history-*,-security-*,-kibana-*,-elastic-*,-.apm-*,-.monitoring-*,-.ml-*,-.transform-*,-.slm-history-*,-.async-search-*,-.kibana-event-log-*,-.tasks-*,-.management-*",
@@ -229,7 +229,7 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
 инспекция востановленных индексов:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X GET "http://localhost:9211/_cluster/allocation/explain?pretty" \
+curl -u elastic:<пароль> -X GET "http://localhost:9211/_cluster/allocation/explain?pretty" \
   -H "Content-Type: application/json" \
   -d '{
     "index": "testtt.module_placeholderdb_alert_rcmnvs_2026_7",
@@ -244,7 +244,7 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X GET "http://localhost:9211/_cluster/allo
 Востанавливаем, с переименованием, снапшот всех индексов и глобального состояния кластера:
 
 ```bash
-curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
+curl -u elastic:<пароль> -X POST "http://localhost:9211/_snapshot/my-minio-snapshot/snapshot_1/_restore?pretty" \
   -H "Content-Type: application/json" \
   -d '{
     "indices": "*",
@@ -254,50 +254,99 @@ curl -u elastic:2nPERtdYz1RYgawe8sI4 -X POST "http://localhost:9211/_snapshot/my
   }'
 ```
 
+### Настройка снапшотов для создания бекапов в NFS
+
+Нужно добавить параметр _path.repo_ в переменные окружения
+
+```yml
+environment:
+  - path.repo=/usr/share/elasticsearch/snapshots
+```
+
+после перезапуска контейнеров docker регестрируем путь для бэкапов:
+
+```bash
+curl -u elastic:<пароль> -X PUT 'http://localhost:9200/_snapshot/my-snapshot' -H 'Content-type: application/json' -d '{
+  "type": "fs",
+  "settings": {
+    "location": "/usr/share/elasticsearch/snapshots/my_repo_location"
+  }
+}'
+```
+
+и создаем снапшот всех индексов и глобального состояния кластера:
+
+```bash
+curl -u elastic:<пароль> -X PUT 'http://localhost:9200/_snapshot/my-snapshot/snapshot_1?wait_for_completion=true'
+```
+
+регестрируем путь для бэкапов на сервере elasticsearch, куда будут востанавливатся снапшоты:
+
+```bash
+curl -u elastic:BNt7mHEecOhlS3982PtM -X PUT 'http://localhost:9211/_snapshot/my-snapshot' -H 'Content-type: application/json' -d '{
+  "type": "fs",
+  "settings": {
+    "location": "/usr/share/elasticsearch/snapshots/my_repo_location"
+  }
+}'
+```
+
+Востанавливаем снапшот индексов ИСКЛЮЧАЯ все системные индексы:
+
+```bash
+curl -u elastic:BNt7mHEecOhlS3982PtM -X POST "http://localhost:9211/_snapshot/my-snapshot/snapshot_1/_restore?&pretty&wait_for_completion=true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "indices": "+*,-.*,-ilm-history-*,-watcher-history-*,-security-*,-kibana-*,-elastic-*,-.apm-*,-.monitoring-*,-.ml-*,-.transform-*,-.slm-history-*,-.async-search-*,-.kibana-event-log-*,-.tasks-*,-.management-*",
+    "ignore_unavailable": true,
+    "include_global_state": false
+  }'
+```
+
 # --------------------------------------------- Временные тестовые учетные данные ---------------------------------------------
 
 ## Для elasticsearch_source
 
 Changed password for user apm_system
-PASSWORD apm_system = NZ8Ycx2VzT940AApBlRz
+PASSWORD apm_system = 35ogw5Psc8jc5uQkofTo
 
 Changed password for user kibana_system
-PASSWORD kibana_system = RLq80sjL4xXV5kdDoDMJ
+PASSWORD kibana_system = YxdwprQ6arenV3Qaw0Oo
 
 Changed password for user kibana
-PASSWORD kibana = RLq80sjL4xXV5kdDoDMJ
+PASSWORD kibana = YxdwprQ6arenV3Qaw0Oo
 
 Changed password for user logstash_system
-PASSWORD logstash_system = HeJ4vjdVY58Dy6jPFMe5
+PASSWORD logstash_system = y17jgerbcH1T4Jhjiacd
 
 Changed password for user beats_system
-PASSWORD beats_system = hWgdM185WKz1ISK2mhFA
+PASSWORD beats_system = a1HzOGfGdb3eR1BJdbza
 
 Changed password for user remote_monitoring_user
-PASSWORD remote_monitoring_user = hiAqOpatxddlftFeNBMl
+PASSWORD remote_monitoring_user = u7XEt7vNA5e8tfzq9zp3
 
 Changed password for user elastic
-PASSWORD elastic = bFZAfJftvX5NpJJsBhLL
+PASSWORD elastic = IS75wLKvUOTWho3Jud8T
 
 # Для elasticsearch_recipient
 
 Changed password for user apm_system
-PASSWORD apm_system = NX37YfeFDwLo98x3xLE5
+PASSWORD apm_system = D1V9BV5qQjJZGcWZAEQR
 
 Changed password for user kibana_system
-PASSWORD kibana_system = 8Uvquh13IqtTa5pWMHDS
+PASSWORD kibana_system = zEsjVmfGnwjRAj7bfe0M
 
 Changed password for user kibana
-PASSWORD kibana = 8Uvquh13IqtTa5pWMHDS
+PASSWORD kibana = zEsjVmfGnwjRAj7bfe0M
 
 Changed password for user logstash_system
-PASSWORD logstash_system = LkmUZk5vApAZMl4Qjpry
+PASSWORD logstash_system = 3qiGqJTqdNT7yobArejZ
 
 Changed password for user beats_system
-PASSWORD beats_system = UZUpkBaUy5x96mEZn9uJ
+PASSWORD beats_system = jCDzSGeUgcKt8Riol3sT
 
 Changed password for user remote_monitoring_user
-PASSWORD remote_monitoring_user = KJfBhkfN9RlfkbUTHYIz
+PASSWORD remote_monitoring_user = p8L4Jz7wefEDI6rVds9p
 
 Changed password for user elastic
-PASSWORD elastic = 2nPERtdYz1RYgawe8sI4
+PASSWORD elastic = BNt7mHEecOhlS3982PtM

@@ -1,6 +1,6 @@
 FROM docker.elastic.co/elasticsearch/elasticsearch:7.17.28
 # docker.elastic.co/elasticsearch/elasticsearch:7.14.1
-# docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+# docker.elastic.co/elasticsearch/elasticsearch:8.19.19
 # docker.elastic.co/elasticsearch/elasticsearch:9.3.0
 # Копируем сертификат в контейнер
 COPY minio/certs/public.crt /usr/share/elasticsearch/config/minio-cert.pem
