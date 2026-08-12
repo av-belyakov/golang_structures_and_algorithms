@@ -2,20 +2,19 @@
 
 ## Генерация ключей и сертификатов
 
-Заменить в .env файле KAFKA_SSL_KEY_PASSWORD на свой.
-Изменить, при необходимости, ID кластера Kafka, параметр KAFKA_CLUSTER_ID.
+Заменить в .env файле KAFKA_SSL_KEY_PASSWORD на свой и добавить CERT_DIR.
 Выполнить:
 
 ```bash
-./kafka-keysgen.sh
+./gen-certs.sh
 ```
 
 Из всех созданных, в результате работы скрипта 'kafka-keysgen.sh', файлов нужны следующие:
 
 1. Для Kafka:
 
-- kafka.keystore.jks;
-- kafka.truststore.jks.
+- kafka.kafka.server.keystore.jks;
+- kafka.server.truststore.jks.
 
 2. Для Kafbat-UI:
 

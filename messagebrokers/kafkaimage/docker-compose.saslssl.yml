@@ -1,0 +1,142 @@
+services:
+  kafka-init:
+    image: apache/kafka:latest
+    restart: "no"
+    env_file: .env
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+
+        {
+          echo "node.id=1"
+          echo "process.roles=broker,controller"
+          echo "controller.quorum.voters=1@localhost:9095"
+          echo "controller.listener.names=CONTROLLER"
+          echo "listeners=CONTROLLER://:9095,INTERNAL://:9093"
+          echo "advertised.listeners=INTERNAL://localhost:9093"
+          echo "listener.security.protocol.map=CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT"
+          echo "inter.broker.listener.name=INTERNAL"
+          echo "log.dirs=/var/lib/kafka/data"
+        } > /tmp/kraft.properties
+
+        /opt/kafka/bin/kafka-storage.sh format \
+          --config /tmp/kraft.properties \
+          --cluster-id "${KAFKA_CLUSTER_ID:-MkU3OEVBNTcwNTJENDM2Qk}" \
+          --add-scram 'SCRAM-SHA-512=[name=$KAFKA_ADMIN,password=$KAFKA_ADMIN_PASSWORD]' \
+          --add-scram 'SCRAM-SHA-512=[name=kafbat,password=$KAFKA_USER_KAFBAT]' \
+          --ignore-formatted
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - kafka-net
+
+  kafka:
+    image: apache/kafka:latest
+    container_name: kafka
+    hostname: kafka
+    restart: unless-stopped
+    ports:
+      # Внешний доступ к Kafka только через SASL_SSL
+      - "9094:9094"
+    env_file: .env
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9095"
+      KAFKA_KRAFT_CLUSTER_ID: "${KAFKA_KRAFT_CLUSTER_ID:-MkU3OEVBNTcwNTJENDM2Qk}"
+
+      # INTERNAL — для kafbat-ui внутри docker-сети
+      # EXTERNAL — для доступа снаружи
+      # CONTROLLER — для KRaft controller, наружу не публикуется
+      KAFKA_LISTENERS: "INTERNAL://0.0.0.0:9093,EXTERNAL://0.0.0.0:9094,CONTROLLER://0.0.0.0:9095"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:9093,EXTERNAL://${EXTERNAL_KAFKA_HOST:-localhost}:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:SASL_SSL,EXTERNAL:SASL_SSL,CONTROLLER:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+
+      # SASL SCRAM-SHA-512
+      KAFKA_SASL_ENABLED_MECHANISMS: "SCRAM-SHA-512"
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: "SCRAM-SHA-512"
+      KAFKA_LISTENER_NAME_INTERNAL_SASL_ENABLED_MECHANISMS: "SCRAM-SHA-512"
+      KAFKA_LISTENER_NAME_EXTERNAL_SASL_ENABLED_MECHANISMS: "SCRAM-SHA-512"
+
+      # JAAS-файл для broker/client credentials
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/jaas/kafka_server_jaas.conf"
+
+      # SSL/TLS
+      KAFKA_SSL_KEYSTORE_LOCATION: "/etc/kafka/secrets/kafka.server.keystore.jks"
+      KAFKA_SSL_KEYSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_SSL_KEY_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_SSL_TRUSTSTORE_LOCATION: "/etc/kafka/secrets/kafka.server.truststore.jks"
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_SSL_KEYSTORE_TYPE: "JKS"
+      KAFKA_SSL_TRUSTSTORE_TYPE: "JKS"
+      KAFKA_SSL_CLIENT_AUTH: required #"none"
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+      KAFKA_SSL_ENABLED_PROTOCOLS: "TLSv1.3,TLSv1.2"
+
+      # KRaft / storage / topics
+      KAFKA_LOG_DIRS: "/var/lib/kafka/data"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: "1"
+      KAFKA_MIN_INSYNC_REPLICAS: "1"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+
+    volumes:
+      # Монтируем каталог целиком, не монтируйте отдельные файлы внутрь этого же каталога
+      - ./certs:/etc/kafka/secrets:ro
+      - ./jaas:/etc/kafka/jaas:ro
+      - kafka-data:/var/lib/kafka/data
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
+    networks:
+      - kafka-net
+
+  kafbat-ui:
+    image: kafbat/kafka-ui:main
+    container_name: kafbat-ui
+    restart: unless-stopped
+    ports:
+      # Внешний доступ к UI по HTTP
+      - "8080:8080"
+    env_file: .env
+    environment:
+      SERVER_PORT: "8080"
+      AUTH_TYPE: "DISABLED"
+
+      KAFKA_CLUSTERS_0_NAME: "kafka-scram-sha-512"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9093"
+
+      # SSL для соединения UI -> Kafka
+      KAFKA_CLUSTERS_0_SSL_ENABLED: "true"
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: "/etc/kafka/secrets/client.truststore.jks"
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: $KAFKA_SSL_KEY_PASSWORD
+
+      # Kafka client properties для UI
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: "SASL_SSL"
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_MECHANISM: "SCRAM-SHA-512"
+      KAFKA_CLUSTERS_0_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.scram.ScramLoginModule required username="kafbat" password=$KAFKA_USER_KAFBAT;'
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: "/etc/kafka/secrets/client.truststore.jks"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE: "JKS"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
+
+    volumes:
+      - ./certs:/etc/kafka/secrets:ro
+    depends_on:
+      - kafka
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    driver: bridge
+
+volumes:
+  kafka-data:
