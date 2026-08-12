@@ -85,7 +85,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
-
     volumes:
       # Монтируем каталог целиком, не монтируйте отдельные файлы внутрь этого же каталога
       - ./certs:/etc/kafka/secrets:ro
@@ -94,7 +93,6 @@ services:
     depends_on:
       kafka-init:
         condition: service_completed_successfully
-
     networks:
       - kafka-net
 
@@ -126,7 +124,6 @@ services:
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: $KAFKA_SSL_KEY_PASSWORD
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE: "JKS"
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: "https"
-
     volumes:
       - ./certs:/etc/kafka/secrets:ro
     depends_on:
