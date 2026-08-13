@@ -1,0 +1,52 @@
+<clickhouse>
+    <keeper_server>
+        <!-- Уникальный идентификатор узла в кластере Keeper -->
+        <server_id>2</server_id>
+        <listen_host>0.0.0.0</listen_host>
+        <!-- Порт для подключения клиентов (серверов ClickHouse) -->
+        <tcp_port>9181</tcp_port>
+        <!-- Порт для внутреннего обмена по протоколу Raft (связь между контейнерами Keeper) -->
+        <raft_port>9234</raft_port>       
+        <!-- Пути для хранения данных внутри контейнера -->
+        <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
+        <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
+
+        <!-- Настройки координации -->
+        <coordination_settings>
+            <!-- Таймаут на операцию в мс -->
+            <operation_timeout_ms>10000</operation_timeout_ms>
+            <!-- Таймаут сессии в мс -->
+            <session_timeout_ms>30000</session_timeout_ms>
+            <!-- Уровень логирования для протокола Raft -->
+            <raft_logs_level>information</raft_logs_level>
+            <!-- ... другие параметры, например, snapshot_distance ... -->
+        </coordination_settings>
+
+        <!-- 
+          ::: ВАЖНО ::: БЛОК КОНФИГУРАЦИИ КЛАСТЕРА 
+          Здесь описываются все узлы кластера Keeper.
+        -->
+        <raft_configuration>
+            <!-- 
+              Каждый узел описывается своим <server> блоком.
+              Важно, чтобы атрибут <id> совпадал со значением <server_id> этого узла.
+            -->
+            <server>
+                <id>1</id>
+                <!-- Имя хоста или IP контейнера. Должно быть доступно из других узлов Keeper -->
+                <hostname>clickhouse-keeper-01</hostname>
+                <port>9234</port> <!-- raft_port -->
+            </server>
+            <server>
+                <id>2</id>
+                <hostname>clickhouse-keeper-02</hostname>
+                <port>9234</port>
+            </server>
+            <server>
+                <id>3</id>
+                <hostname>clickhouse-keeper-03</hostname>
+                <port>9234</port>
+            </server>
+        </raft_configuration>
+    </keeper_server>
+</clickhouse>

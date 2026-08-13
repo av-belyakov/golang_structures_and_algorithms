@@ -1,0 +1,139 @@
+version: "3.8"
+
+services:
+  clickhouse-keeper-01:
+    image: "clickhouse/clickhouse-keeper:latest-alpine"
+    container_name: clickhouse-keeper-01
+    hostname: clickhouse-keeper-01
+    restart: unless-stopped
+    networks:
+      - clickhouse-network
+    ports:
+      - "9181:9181" # порт для подключения ClickHouse-серверов
+      - "9234:9234" # порт для внутреннего Raft-трафика между нодами Keeper
+    environment:
+      - CLICKHOUSE_KEEPER_CONFIG=/etc/clickhouse-keeper/keeper_config.xml
+    volumes:
+      # конфигурационный файл для этого узла
+      - ./keeper-configs/keeper-config-01.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
+      # тома для хранения данных (логи и снэпшоты)
+      - keeper-01-data:/var/lib/clickhouse
+      # логи для отладки (опционально)
+      - ./keeper/logs/keeper-01:/var/log/clickhouse-keeper
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    # лимиты ресурсов (рекомендуется для production)
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+    # проверка готовности сервиса
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "clickhouse-keeper",
+          "--config",
+          "/etc/clickhouse-keeper/keeper_config.xml",
+          "--test",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clickhouse-keeper-02:
+    image: "clickhouse/clickhouse-keeper:latest-alpine"
+    container_name: clickhouse-keeper-02
+    hostname: clickhouse-keeper-02
+    restart: unless-stopped
+    networks:
+      - clickhouse-network
+    ports:
+      - "9182:9181" # порт для подключения ClickHouse-серверов (разные порты хоста, чтобы не было конфликтов)
+      - "9235:9234"
+    environment:
+      - CLICKHOUSE_KEEPER_CONFIG=/etc/clickhouse-keeper/keeper_config.xml
+    volumes:
+      - ./keeper-configs/keeper-config-02.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
+      - keeper-02-data:/var/lib/clickhouse
+      - ./keeper/logs/keeper-02:/var/log/clickhouse-keeper
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "clickhouse-keeper",
+          "--config",
+          "/etc/clickhouse-keeper/keeper_config.xml",
+          "--test",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clickhouse-keeper-03:
+    image: "clickhouse/clickhouse-keeper:latest-alpine"
+    container_name: clickhouse-keeper-03
+    hostname: clickhouse-keeper-03
+    restart: unless-stopped
+    networks:
+      - clickhouse-network
+    ports:
+      - "9183:9181" # порт для подключения ClickHouse-серверов (разные порты хоста, чтобы не было конфликтов)
+      - "9236:9234"
+    environment:
+      - CLICKHOUSE_KEEPER_CONFIG=/etc/clickhouse-keeper/keeper_config.xml
+    volumes:
+      - ./keeper-configs/keeper-config-03.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
+      - keeper-03-data:/var/lib/clickhouse
+      - ./keeper/logs/keeper-03:/var/log/clickhouse-keeper
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "clickhouse-keeper",
+          "--config",
+          "/etc/clickhouse-keeper/keeper_config.xml",
+          "--test",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# Тома для персистентного хранения данных
+volumes:
+  keeper-01-data:
+    driver: local
+  keeper-02-data:
+    driver: local
+  keeper-03-data:
+    driver: local
+
+# Сеть для общения между контейнерами
+networks:
+  clickhouse-network:
+    driver: bridge
+    name: clickhouse-network

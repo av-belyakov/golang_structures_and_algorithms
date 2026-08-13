@@ -14,15 +14,17 @@
 
     <users>
         <default>
-            <password>971c-24fr-Ytaz-122c</password>
+            <!-- <password></password> -->
+            <password_sha256_hex>4fef0251515a1d8fa50789110ea2011289cde88a2d43f5c167af96b967f39654</password_sha256_hex>
             <networks>
                 <ip>::/0</ip>
             </networks>
             <profile>default</profile>
             <quota>default</quota>
+            <!-- параметр access_management позволяет создавать и настраивать пользователей через SQL-запросы -->
             <access_management>1</access_management>
         </default>
-        
+
         <readonly>
             <password>readonly_password</password>
             <networks>
