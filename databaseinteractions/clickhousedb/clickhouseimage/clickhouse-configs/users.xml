@@ -1,4 +1,3 @@
-<!-- ./clickhouse/users.xml -->
 <clickhouse>
     <profiles>
         <default>
@@ -13,26 +12,20 @@
     </profiles>
 
     <users>
-        <default>
+        <!-- replace="true" полностью заменяет блок в основном файле user.xml который находится в /etc/clickhouse-server/users.d/users.xml
+        и уже содержит настройки default пользователя, в том числе и другой вид хранения пароля <password></password>, а одновременное
+        использование паролей разных видов запрещено -->
+        <default replace="true">
             <!-- <password></password> -->
-            <password_sha256_hex>4fef0251515a1d8fa50789110ea2011289cde88a2d43f5c167af96b967f39654</password_sha256_hex>
+            <password_sha256_hex>276f4ea8937dbf32828905fcc614b48df38fd65a43d818c6871a2fee5890e2bb</password_sha256_hex>
             <networks>
-                <ip>::/0</ip>
+                <ip>0.0.0.0/0</ip>
             </networks>
             <profile>default</profile>
             <quota>default</quota>
             <!-- параметр access_management позволяет создавать и настраивать пользователей через SQL-запросы -->
             <access_management>1</access_management>
         </default>
-
-        <readonly>
-            <password>readonly_password</password>
-            <networks>
-                <ip>::/0</ip>
-            </networks>
-            <profile>readonly</profile>
-            <quota>default</quota>
-        </readonly>
     </users>
 
     <quotas>

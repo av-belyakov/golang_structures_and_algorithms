@@ -17,9 +17,9 @@ services:
       # конфигурационный файл для этого узла
       - ./keeper-configs/keeper-config-01.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
       # тома для хранения данных (логи и снэпшоты)
+      - ./keeper/logs/keeper-01:/var/log/clickhouse-keeper
       - keeper-01-data:/var/lib/clickhouse
       # логи для отладки (опционально)
-      - ./keeper/logs/keeper-01:/var/log/clickhouse-keeper
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     # лимиты ресурсов (рекомендуется для production)
@@ -59,8 +59,8 @@ services:
       - CLICKHOUSE_KEEPER_CONFIG=/etc/clickhouse-keeper/keeper_config.xml
     volumes:
       - ./keeper-configs/keeper-config-02.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
-      - keeper-02-data:/var/lib/clickhouse
       - ./keeper/logs/keeper-02:/var/log/clickhouse-keeper
+      - keeper-02-data:/var/lib/clickhouse
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     deploy:
@@ -98,8 +98,8 @@ services:
       - CLICKHOUSE_KEEPER_CONFIG=/etc/clickhouse-keeper/keeper_config.xml
     volumes:
       - ./keeper-configs/keeper-config-03.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
-      - keeper-03-data:/var/lib/clickhouse
       - ./keeper/logs/keeper-03:/var/log/clickhouse-keeper
+      - keeper-03-data:/var/lib/clickhouse
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     deploy:

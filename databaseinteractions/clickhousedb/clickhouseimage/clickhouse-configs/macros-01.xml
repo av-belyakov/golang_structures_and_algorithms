@@ -1,6 +1,6 @@
 <clickhouse>
     <macros>
         <shard>01</shard>
-        <replica>clickhouse-server-01</replica>
+        <replica>replica-01-1</replica>
     </macros>
 </clickhouse>

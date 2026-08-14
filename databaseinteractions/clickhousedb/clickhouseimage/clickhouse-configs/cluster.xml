@@ -1,0 +1,46 @@
+<clickhouse>
+    <remote_servers>
+        <!-- Имя вашего кластера. Не должно содержать точек -->
+        <example_cluster>
+            <!-- Первый шард -->
+            <shard>
+                <!-- лучьше поставить true, тогда при записи данных через распределенную таблицу, ClickHouse будет 
+                отправлять данные только на одну из реплик шарда, а дальше механизм репликации сам разошлет их на остальные -->
+                <internal_replication>true</internal_replication>
+                <replica>
+                    <host>clickhouse-01</host>
+                    <port>9000</port>
+                    <user>default</user>
+                    <!-- <password>your_password</password> -->
+                    <!-- хеш пароля должен совпадать с хешом в файле users.xml -->
+                    <password_sha256_hex>276f4ea8937dbf32828905fcc614b48df38fd65a43d818c6871a2fee5890e2bb</password_sha256_hex>
+                </replica>
+                <replica>
+                    <host>clickhouse-02</host>
+                    <port>9000</port>
+                    <user>default</user>
+                    <!-- <password>your_password</password> -->
+                    <password_sha256_hex>276f4ea8937dbf32828905fcc614b48df38fd65a43d818c6871a2fee5890e2bb</password_sha256_hex>
+                </replica>
+            </shard>
+            <!-- Второй шард -->
+            <shard>
+                <internal_replication>true</internal_replication>
+                <replica>
+                    <host>clickhouse-03</host>
+                    <port>9000</port>
+                    <user>default</user>
+                    <!-- <password>your_password</password> -->
+                    <password_sha256_hex>276f4ea8937dbf32828905fcc614b48df38fd65a43d818c6871a2fee5890e2bb</password_sha256_hex>
+                </replica>
+                <replica>
+                    <host>clickhouse-04</host>
+                    <port>9000</port>
+                    <user>default</user>
+                    <!-- <password>your_password</password> -->
+                    <password_sha256_hex>276f4ea8937dbf32828905fcc614b48df38fd65a43d818c6871a2fee5890e2bb</password_sha256_hex>
+                </replica>
+            </shard>
+        </example_cluster>
+    </remote_servers>
+</clickhouse>

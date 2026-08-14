@@ -44,9 +44,9 @@ services:
       - $PWD/clickhouse-server-log:/var/log/clickhouse-server/:rw
 
       # конфигурационные файлы сервера
-      - $PWD/config/config.xml:/etc/clickhouse-server/config.d/config.xml:rw
+      - $PWD/clickhouse-configs/config.xml:/etc/clickhouse-server/config.d/config.xml:rw
       # конфигурационные файлы клиента
-      - $PWD/config/users.xml:/etc/clickhouse-server/users.d/users.xml:rw # Пользователи
+      - $PWD/clickhouse-configs/users.xml:/etc/clickhouse-server/users.d/users.xml:rw # Пользователи
 
       # папка со сценариями инициализации базы данных
       # чтобы выполнить дополнительную инициализацию в образе, полученном на основе этого,
