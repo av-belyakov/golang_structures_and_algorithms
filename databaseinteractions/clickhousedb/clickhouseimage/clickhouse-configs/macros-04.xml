@@ -2,5 +2,6 @@
     <macros>
         <shard>02</shard>
         <replica>replica-02-2</replica>
+        <claster>example_cluster</claster>
     </macros>
 </clickhouse>

@@ -1,4 +1,7 @@
 <clickhouse>
+    <!-- Глобальный listen_host для клиентских подключений -->
+    <listen_host>0.0.0.0</listen_host>
+
     <keeper_server>
         <!-- Уникальный идентификатор узла в кластере Keeper -->
         <server_id>2</server_id>
