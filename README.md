@@ -119,3 +119,5 @@
 - edgelist - пример построения графа типа список рёбер (edge list);
 - adjacencymatrix - пример построения графа типа матрица смежности (adjacency matrix);
 - adjacencylist - пример построения графа типа список смежности (adjacency list).
+
+##### someusefulsubmodules - примеры некоторых полезных/простых подмодулей
