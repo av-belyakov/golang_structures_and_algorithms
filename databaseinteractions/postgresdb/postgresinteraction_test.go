@@ -38,7 +38,7 @@ func TestPostgresInteraction(t *testing.T) {
 	}
 
 	t.Run("Тест 1. Создаём тестовые таблицы и заполняем их данными", func(t *testing.T) {
-		row, err := db.QueryContext(t.Context(),
+		rows, err := db.QueryContext(t.Context(),
 			`CREATE TABLE IF NOT EXISTS public.attack_protocols (
 				id SERIAL PRIMARY KEY,
 				name varchar(255) NOT NULL,
@@ -52,7 +52,7 @@ func TestPostgresInteraction(t *testing.T) {
 		);`)
 		assert.NoError(t, err)
 
-		row.Close()
+		rows.Close()
 
 		for range 30 {
 			row, err := db.QueryContext(t.Context(),
@@ -92,6 +92,7 @@ func TestPostgresInteraction(t *testing.T) {
 				30_000,
 			)
 			assert.NoError(t, err)
+			assert.NoError(t, rows.Err())
 
 			list := []Info(nil)
 			for rows.Next() {
@@ -148,6 +149,7 @@ func TestPostgresInteraction(t *testing.T) {
 				AND attack_level_id = 2;`,
 			)
 			assert.NoError(t, err)
+			assert.NoError(t, rows.Err())
 
 			var (
 				createdAt     time.Time
