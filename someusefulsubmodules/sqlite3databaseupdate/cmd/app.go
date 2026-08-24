@@ -3,11 +3,12 @@ package sqlite3updater
 import (
 	"context"
 	"fmt"
-	"golang_structures_and_algorithms/someusefulsubmodules/sqlite3databaseupdate/addnewcolums/internal/sqlite3api"
 	"net/url"
 	"os"
 
 	"gopkg.in/yaml.v3"
+
+	"golang_structures_and_algorithms/someusefulsubmodules/sqlite3databaseupdate/internal/sqlite3api"
 )
 
 func NewApp(s Settings) (*ApplicationSettings, error) {
