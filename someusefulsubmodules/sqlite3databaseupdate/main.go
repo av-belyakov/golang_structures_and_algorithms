@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	sqlite3updater "golang_structures_and_algorithms/someusefulsubmodules/sqlite3databaseupdate/cmd"
+	sqlite3updater "sqlite3databaseupdate/cmd"
 )
 
 func main() {
