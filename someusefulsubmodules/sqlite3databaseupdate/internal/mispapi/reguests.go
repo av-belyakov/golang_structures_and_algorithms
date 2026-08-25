@@ -1,0 +1,76 @@
+package mispapi
+
+import (
+	"bytes"
+	"context"
+	"crypto/tls"
+	"io"
+	"net/http"
+)
+
+func (client *ClientMISP) SetAuthData(ah string) {
+	client.AuthHash = ah
+}
+
+func (client *ClientMISP) GetAuthData() string {
+	return client.AuthHash
+}
+
+func (client *ClientMISP) Get(ctx context.Context, path string, data []byte) (int, []byte, error) {
+	return client.Do(ctx, "GET", path, data)
+}
+
+func (client *ClientMISP) Post(ctx context.Context, path string, data []byte) (int, []byte, error) {
+	return client.Do(ctx, "POST", path, data)
+}
+
+func (client *ClientMISP) Delete(ctx context.Context, path string) (int, []byte, error) {
+	return client.Do(ctx, "DELETE", path, []byte{})
+}
+
+// Do выполняет запрос к API MISP и возвращает заголовок ответа и и тело ответа в виде среза байт
+func (client *ClientMISP) Do(ctx context.Context, method, path string, data []byte) (int, []byte, error) {
+	dataLen := 0
+	resBodyByte := []byte{}
+
+	reader := bytes.NewReader(data)
+	httpReq, err := http.NewRequestWithContext(ctx, method, path, reader)
+	if err != nil {
+		return 0, resBodyByte, err
+	}
+
+	dataLen = reader.Len()
+	if dataLen > 0 && method == "POST" {
+		httpReq.ContentLength = int64(dataLen)
+		httpReq.Body = io.NopCloser(reader)
+	}
+
+	httpTrp := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !client.Verify},
+	}
+
+	httpReq.URL = client.BaseURL
+	httpReq.URL.Path = path
+
+	httpReq.Header = http.Header{}
+	httpReq.Header.Set("Authorization", client.AuthHash)
+	httpReq.Header.Set("Content-type", "application/json")
+	httpReq.Header.Set("Accept", "application/json")
+
+	httpClient := http.Client{
+		Transport: httpTrp,
+	}
+
+	res, err := httpClient.Do(httpReq)
+	if err != nil {
+		return 0, resBodyByte, err
+	}
+	defer res.Body.Close()
+
+	resBodyByte, err = io.ReadAll(res.Body)
+	if err != nil {
+		return 0, resBodyByte, err
+	}
+
+	return res.StatusCode, resBodyByte, err
+}
