@@ -4,21 +4,15 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
-func NewRequest(host string, port int) (*ModuleRequest, error) {
+func NewRequest(envMispTokenName, host string, port int) (*ModuleRequest, error) {
 	module := &ModuleRequest{
 		host: host,
 		port: port,
 	}
 
-	if err := godotenv.Load(".env"); err != nil {
-		return module, err
-	}
-
-	authKey := os.Getenv("GO_SQLITE3DATABASEUPDATE_MISPTOKEN")
+	authKey := os.Getenv(envMispTokenName)
 	module.authKey = authKey
 
 	return module, nil
@@ -30,9 +24,6 @@ func NewClientMISP(authKey, host string, port int, verify bool) (*ClientMISP, er
 	if err != nil {
 		return &ClientMISP{}, err
 	}
-
-	fmt.Println("Port=", port)
-	fmt.Printf("UrlBase:%+v\n", urlBase)
 
 	return &ClientMISP{
 		BaseURL:  urlBase,

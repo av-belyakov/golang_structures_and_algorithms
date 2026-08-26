@@ -65,7 +65,7 @@ func (m *Module) GetTableColumns(ctx context.Context, tableName string) ([]Colum
 	return columns, rows.Err()
 }
 
-// GetAllEventsId получить весь список событий MISP
+// GetAllEventsId получить весь список событий MISP где ключ карты это eventId, а значение это caseId
 func (m *Module) GetAllEventsId(ctx context.Context) (map[int64]int64, error) {
 	listEvent := map[int64]int64{}
 
@@ -90,9 +90,6 @@ func (m *Module) GetAllEventsId(ctx context.Context) (map[int64]int64, error) {
 // UpdateColumnSource обновить
 func (m *Module) UpdateColumnSource(ctx context.Context, tableName string, eventId int64, source string) error {
 	query := fmt.Sprintf("UPDATE %s SET source='%s', datetime='%s' WHERE eventId=%d", tableName, source, time.Now().Format(time.RFC3339), eventId)
-
-	fmt.Println("Query:", query)
-
 	if _, err := m.client.ExecContext(ctx, query); err != nil {
 		return err
 	}
@@ -103,9 +100,6 @@ func (m *Module) UpdateColumnSource(ctx context.Context, tableName string, event
 // AlterTableAddColumn добавляет новые колонки в таблицу
 func (m *Module) AlterTableAddColumn(ctx context.Context, tableName, columnName, columnType string) error {
 	query := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, columnType)
-
-	fmt.Println("Query:", query)
-
 	if _, err := m.client.ExecContext(ctx, query); err != nil {
 		return err
 	}

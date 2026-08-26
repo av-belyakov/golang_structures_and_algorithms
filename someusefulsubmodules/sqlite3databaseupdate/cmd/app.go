@@ -7,12 +7,23 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v3"
 
 	"sqlite3databaseupdate/internal/mispapi"
 	"sqlite3databaseupdate/internal/sqlite3api"
+)
+
+const (
+	tableName        = "placeholder_misp"
+	logFile          = "process.log"
+	envMispTokenName = "GO_SQLITE3DATABASEUPDATE_MISPTOKEN"
+	hostMisp         = "misp-center.cloud.gcm"
+	portMisp         = 80
 )
 
 func NewApp(s Settings) (*ApplicationSettings, error) {
@@ -21,6 +32,11 @@ func NewApp(s Settings) (*ApplicationSettings, error) {
 		Sqlite3: Sqlite3Settings{
 			FileDbPath: s.Sqlite3DbPath,
 		},
+	}
+
+	// инициируем чтение файла .env
+	if err := godotenv.Load(".env"); err != nil {
+		return settings, err
 	}
 
 	urlBase, err := url.Parse("http://" + s.MispHost)
@@ -56,14 +72,20 @@ func (app *ApplicationSettings) Start(ctx context.Context) error {
 	fmt.Println("UpdateSqlite3 module start")
 	fmt.Println("Инициализация модуля взаимодействия с БД Sqlite3")
 
-	tableName := "placeholder_misp"
+	//проверяем наличие файла логов
+	_, err := os.Stat(logFile)
+	if err == nil {
+		if err := os.Remove(logFile); err != nil {
+			fmt.Println("error:", err)
+		}
+	}
 
 	sqlDb := sqlite3api.New(app.Sqlite3.FileDbPath)
 	if err := sqlDb.Start(ctx); err != nil {
 		return err
 	}
 
-	fmt.Println("Получаем списко полей таблицы")
+	fmt.Println("Получаем список полей таблицы для того что бы понять нужно ли добавлять новые колонки")
 	columnsInfo, err := sqlDb.GetTableColumns(ctx, tableName)
 	if err != nil {
 		return err
@@ -80,14 +102,15 @@ func (app *ApplicationSettings) Start(ctx context.Context) error {
 		}
 	}
 
-	fmt.Println("Добавляем новые колонки в таблицу, если их нет")
 	if !columnTimeIsExist {
+		fmt.Println("Добавляем колонку 'datetime'")
 		if err := sqlDb.AlterTableAddColumn(ctx, tableName, "datetime", "TEXT"); err != nil {
 			return err
 		}
 	}
 
 	if !columnSourceIsExist {
+		fmt.Println("Добавляем колонку 'source'")
 		if err := sqlDb.AlterTableAddColumn(ctx, tableName, "source", "VARCHAR(8)"); err != nil {
 			return err
 		}
@@ -99,52 +122,93 @@ func (app *ApplicationSettings) Start(ctx context.Context) error {
 		return err
 	}
 
-	fmt.Println("Всего событий MISP найдено:", len(listEvents))
-	var num int
+	fmt.Println("Выполняем поиск событий в MISP")
+	request, err := mispapi.NewRequest(envMispTokenName, hostMisp, portMisp)
+	if err != nil {
+		return err
+	}
+
+	eventIdJsonError := []int64{}
+	notFoundEventId := map[int64]int64{}
+	var foundEventId int
 	for eventId, caseId := range listEvents {
-		if num == 11 {
-			break
+		statusCode, raw, err := request.GetEvent(ctx, time.Second*10, strconv.Itoa(int(eventId)))
+		if err != nil {
+			fmt.Println("error:", err)
+
+			continue
 		}
 
-		num++
-		fmt.Printf("%d. eventId:%d, caseId:%d\n", num, eventId, caseId)
+		if statusCode != http.StatusOK {
+			fmt.Printf("status code %d for eventId:%d\n", statusCode, eventId)
+			notFoundEventId[eventId] = caseId
+
+			continue
+		}
+
+		event := mispapi.MispElement{}
+		if err := json.Unmarshal(raw, &event); err != nil {
+			fmt.Printf("error: %s (eventId:'%d')\n", err.Error(), eventId)
+
+			eventIdJsonError = append(eventIdJsonError, eventId)
+
+			continue
+		}
+
+		//fmt.Printf("Event:%+v\nOrganization name:%s\n", event.Event, event.Event.Org.Name)
+
+		source, ok := app.Organizations[event.Event.Org.Name]
+		if !ok {
+			fmt.Printf("organization name '%s' not found\n", event.Event.Org.Name)
+
+			continue
+		}
+
+		if err := sqlDb.UpdateColumnSource(ctx, tableName, eventId, source); err != nil {
+			fmt.Println("error:", err)
+
+			continue
+		}
+
+		foundEventId++
 	}
 
-	fmt.Println("Тестово получаем одно событие из MISP")
-	request, err := mispapi.NewRequest("misp-center.cloud.gcm", 80)
+	finalMessage := fmt.Sprintf(`
+	Всего событий MISP в БД:%d
+	Событий успешно обработанно:%d
+	События которые не были найдены в MISP:%d
+	Событий которые вызвали ошибки при конвертации из JSON:%d
+	`,
+		len(listEvents),
+		foundEventId,
+		len(notFoundEventId),
+		len(eventIdJsonError),
+	)
+
+	fmt.Println(finalMessage)
+	fmt.Printf("Подробно можно посмотреть в лог-файле '%s'\n", logFile)
+
+	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
-	defer cancel()
-
-	/*
-		сделать всё тоже самое что ниже но в цикле для всех event id из listEvents и на новом бекапе
-	*/
-
-	statusCode, raw, err := request.GetEvent(ctx, "135338")
-	if err != nil {
-		return err
+	strJsonError := strings.Builder{}
+	fmt.Fprintf(&strJsonError, "События которые вызвали ошибки при конвертации из JSON:\n")
+	for k, v := range eventIdJsonError {
+		fmt.Fprintf(&strJsonError, "%d. %d\n", k+1, v)
 	}
 
-	fmt.Printf("Request status:%d\n", statusCode)
-	if statusCode != http.StatusOK {
-		return fmt.Errorf("error, status code %d", statusCode)
+	strNotFoundEventId := strings.Builder{}
+	fmt.Fprintf(&strNotFoundEventId, "События которые не были найдены в MISP:\n")
+	count := 1
+	for eventId, caseId := range notFoundEventId {
+		fmt.Fprintf(&strNotFoundEventId, "%d. eventId:'%d', caseId:'%d'\n", count, eventId, caseId)
+		count++
 	}
 
-	event := mispapi.MispElement{}
-	if err := json.Unmarshal(raw, &event); err != nil {
-		return err
-	}
-
-	fmt.Printf("Event:%+v\nOrganization name:%s\n", event.Event, event.Event.Org.Name)
-
-	if source, ok := app.Organizations[event.Event.Org.Name]; ok {
-		if err := sqlDb.UpdateColumnSource(ctx, tableName, 10936, source); err != nil {
-			return err
-		}
-	}
+	fmt.Fprintf(f, "%s\n\n%s\n\n%s\n", finalMessage, strJsonError.String(), strNotFoundEventId.String())
 
 	return nil
 }
