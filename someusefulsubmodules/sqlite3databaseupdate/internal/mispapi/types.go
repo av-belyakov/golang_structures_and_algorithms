@@ -22,6 +22,7 @@ type MispElement struct {
 
 type EventElement struct {
 	Org                OrgElement `json:"org"`
+	EventCreatorEmail  any        `json:"event_creator_email"`
 	Id                 string     `json:"id"`
 	UUID               string     `json:"uuid"`
 	OrgId              string     `json:"org_id"`
@@ -37,7 +38,6 @@ type EventElement struct {
 	PublishTimestamp   string     `json:"publish_timestamp"`
 	SightingTimestamp  string     `json:"sighting_timestamp"`
 	ExtendsUuid        string     `json:"extends_uuid"`
-	EventCreatorEmail  string     `json:"event_creator_email"`
 	Locked             bool       `json:"locked"`
 	Published          bool       `json:"published"`
 	ProposalEmailLock  bool       `json:"proposal_email_lock"`
