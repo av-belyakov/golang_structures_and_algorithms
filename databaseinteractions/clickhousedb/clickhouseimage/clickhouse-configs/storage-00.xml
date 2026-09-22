@@ -1,0 +1,17 @@
+<clickhouse>
+    <storage_configuration>
+        <disks>
+            <!-- Настройки для стандартного диска -->
+            <default>
+                <keep_free_space_bytes>2147483648</keep_free_space_bytes>
+            </default>
+
+            <!-- Настройки для дополнительного диска -->
+            <hdd1>
+                <path>/mnt/hdd1/clickhouse/</path>
+                <keep_free_space_bytes>10737418240</keep_free_space_bytes>
+            </hdd1>
+        </disks>
+        <!-- Политики хранения (policies) описываются здесь -->
+    </storage_configuration>
+</clickhouse>
