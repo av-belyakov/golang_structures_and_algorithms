@@ -184,6 +184,33 @@ FROM system.replicas
 WHERE database = 'example_table';
 ```
 
+#### Хранение данных в партициях по дням
+
+Запрос для того чтобы посмотреть партиции по дням для какой либо таблицы:
+
+```sql
+select
+	partition_id,
+    partition,
+    name,
+    active,
+    rows,
+    formatReadableSize(sum(bytes_on_disk)) AS size
+FROM system.parts
+WHERE database = 'deepflow'
+  AND table = 'arkime_sessions'
+  AND active = 1
+GROUP by partition_id, partition, name, active, rows
+ORDER BY partition DESC;
+
+```
+
+Удаление какой либо выбранной дневной партиции:
+
+```sql
+ALTER TABLE deepflow.arkime_sessions DROP PARTITION '20260922';
+```
+
 #### Добавление пользователя через запросы к БД
 
 Для продолжения необходимо создать ещё одного, помимо default, пользователя через запрос к БД.

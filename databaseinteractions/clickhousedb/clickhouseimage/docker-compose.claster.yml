@@ -34,6 +34,8 @@ services:
       # настройки сервера
       - ./clickhouse-configs/config.xml:/etc/clickhouse-server/config.d/30-config.xml:rw
       - ./clickhouse-configs/ipv4.xml:/etc/clickhouse-server/config.d/ipv4.xml:ro
+      # настройки хранилища сервера
+      - ./clickhouse-configs/storage-00.xml:/etc/clickhouse-server/config.d/storage-00.xml:rw
       # для упрощения, для всех элементов кластера используем одни и теже настройки пользователя
       - ./clickhouse-configs/users.xml:/etc/clickhouse-server/users.d/users.xml:ro
       # временную зону не надо пробрасывать так как настройка часового пояса выполняется в config.xml
@@ -70,6 +72,7 @@ services:
       - ./clickhouse-configs/cluster.xml:/etc/clickhouse-server/config.d/20-cluster.xml
       - ./clickhouse-configs/config.xml:/etc/clickhouse-server/config.d/30-custom-config.xml:rw
       - ./clickhouse-configs/ipv4.xml:/etc/clickhouse-server/config.d/ipv4.xml:ro
+      - ./clickhouse-configs/storage-00.xml:/etc/clickhouse-server/config.d/storage-00.xml:rw
       - ./clickhouse-configs/users.xml:/etc/clickhouse-server/users.d/users.xml:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
@@ -101,6 +104,7 @@ services:
       - ./clickhouse-configs/cluster.xml:/etc/clickhouse-server/config.d/20-cluster.xml
       - ./clickhouse-configs/config.xml:/etc/clickhouse-server/config.d/30-custom-config.xml:rw
       - ./clickhouse-configs/ipv4.xml:/etc/clickhouse-server/config.d/ipv4.xml:ro
+      - ./clickhouse-configs/storage-00.xml:/etc/clickhouse-server/config.d/storage-00.xml:rw
       - ./clickhouse-configs/users.xml:/etc/clickhouse-server/users.d/users.xml:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
@@ -130,6 +134,7 @@ services:
       - ./clickhouse-configs/cluster.xml:/etc/clickhouse-server/config.d/20-cluster.xml
       - ./clickhouse-configs/config.xml:/etc/clickhouse-server/config.d/30-config.xml:rw
       - ./clickhouse-configs/ipv4.xml:/etc/clickhouse-server/config.d/ipv4.xml:ro
+      - ./clickhouse-configs/storage-00.xml:/etc/clickhouse-server/config.d/storage-00.xml:rw
       - ./clickhouse-configs/users.xml:/etc/clickhouse-server/users.d/users.xml:ro
       - ./clickhouse-04-data:/var/lib/clickhouse/:rw
       - ./clickhouse-04-log:/var/log/clickhouse-server/:rw

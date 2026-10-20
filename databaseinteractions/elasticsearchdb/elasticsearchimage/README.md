@@ -350,3 +350,30 @@ PASSWORD remote_monitoring_user = p8L4Jz7wefEDI6rVds9p
 
 Changed password for user elastic
 PASSWORD elastic = BNt7mHEecOhlS3982PtM
+
+### Примеры некоторых запросов
+
+```json
+# Просто посмотреть список индексов
+GET module_placeholderdb_bizone_alerts.test_2026_10/_search?from=0&size=50
+# Поиск индекса по одному из его параметров, в данном случае по UUID
+GET module_placeholderdb_bizone_alerts.test_2026_10/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match": {"uuid":"92b0c109-e7b7-43c7-b2dc-8aeada796a0b"}}
+      ]
+    }
+  }
+}
+# Поиск индексов по такому параметру как пустое поле affected_log_sources
+GET module_placeholderdb_bizone_alerts.test_2026_10/_search
+{
+  "query": {
+    "exists": {
+      "field": "affected_log_sources"
+    }
+  }
+}
+```
