@@ -376,4 +376,77 @@ GET module_placeholderdb_bizone_alerts.test_2026_10/_search
     }
   }
 }
+# Просто посмотреть список индексов
+GET module_placeholderdb_bizone_incidents.test_2026_11/_search?from=0&size=50
+# Поиск индекса по одному из его параметров, в данном случае по UUID
+GET module_placeholderdb_bizone_incidents.test_2026_11/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match": {"key":"INC-2045"}}
+      ]
+    }
+  }
+}
+GET module_placeholderdb_bizone_incidents.test_2026_11/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match": {"@special_uuid":"dcf51262-0462-4fdc-8691-dff006fa110a"}}
+      ]
+    }
+  }
+}
+# Поиск индексов по такому параметру как пустое поле affected_log_sources
+GET module_placeholderdb_bizone_incidents.test_2026_11/_search
+{
+  "query": {
+    "exists": {
+      "field": "affected_log_sources"
+    }
+  }
+}
+# Удаление документов в индексе
+DELETE module_placeholderdb_bizone_incidents.test_2026_11/_doc/yhGIh6EBcfH0hhBlYO39
+POST module_placeholderdb_bizone_incidents.test_2026_11/_delete_by_query
+{
+  "query": {
+    "match": {
+      "key": "INC-2045"
+    }
+  }
+}
+# Обновление документа в части информации о сенсорах
+POST module_placeholderdb_bizone_incidents.test_2026_11/_update/2xGIh6EBcfH0hhBlde3x
+{
+  "doc": {
+    "@sensor_additional_information": {
+		  "inn":         "7703602065",
+		  "host_id":      "1234",
+      "geo_code":     "RU",
+      "org_name":     "РусАгроКомплекс",
+      "sensor_id":    "570009",
+      "subject_rf":   "Производство",
+      "object_area":  "Агропромышленный комплекс",
+      "full_org_name": "АО 'РусАгроКомплекс'"
+    }
+  }
+}
+# Получить документ по его _id
+GET module_placeholderdb_bizone_incidents.test_2026_11/_doc/4RGIh6EBcfH0hhBlde3x
+# Получить количество уникальных документов по ключу key
+GET module_placeholderdb_bizone_incidents.test_2026_11/_search
+{
+  "size": 0,
+  "aggs": {
+    "unique_categories": {
+      "terms": {
+        "field": "key.keyword",
+        "size": 1000
+      }
+    }
+  }
+}
 ```
