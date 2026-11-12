@@ -353,10 +353,15 @@ PASSWORD elastic = BNt7mHEecOhlS3982PtM
 
 ### Примеры некоторых запросов
 
-```json
-# Просто посмотреть список индексов
+Просто посмотреть список индексов
+
+```bash
 GET module_placeholderdb_bizone_alerts.test_2026_10/_search?from=0&size=50
-# Поиск индекса по одному из его параметров, в данном случае по UUID
+```
+
+Поиск индекса по одному из его параметров, в данном случае по UUID
+
+```bash
 GET module_placeholderdb_bizone_alerts.test_2026_10/_search
 {
   "query": {
@@ -367,7 +372,11 @@ GET module_placeholderdb_bizone_alerts.test_2026_10/_search
     }
   }
 }
-# Поиск индексов по такому параметру как пустое поле affected_log_sources
+```
+
+Поиск индексов по такому параметру как пустое поле affected_log_sources
+
+```bash
 GET module_placeholderdb_bizone_alerts.test_2026_10/_search
 {
   "query": {
@@ -376,16 +385,28 @@ GET module_placeholderdb_bizone_alerts.test_2026_10/_search
     }
   }
 }
-# Просто посмотреть список индексов
+```
+
+Просто посмотреть список индексов
+
+```bash
 GET module_placeholderdb_bizone_incidents.test_2026_11/_search?from=0&size=50
-# Поиск индекса по одному из его параметров, в данном случае по UUID
+```
+
+Поиск индекса по одному из его параметров, в данном случае по полям _key_ и _@special\*uuid_. При этом в этих примерах
+есть существенное различие.
+
+- В первом примере поиск осуществляется по дубликату поля _key_ полю _key.keyword_ который **не разбивается на токены** и сохраняет строку в точности как есть. Когда Elasticsearch индексировал документ например со значение "INC-2065" в поле _key_, его стандартный анализатор привел его к нижнему регистру и разбил по не-алфавитным символам (в данном случае по дефису). В поисковый индекс попали токены: ["inc", "2065"]. Так работает полнотекстовый поиск в этой СУБД.
+  Кроме того в запросе была использована конструкция _term_ которая **ищет точное совпадение** в отличии от конструкции _match_.
+
+- Во втором примере использовался полнотекстовый поиск, соответственно значение поля _@special\*uuid_ разбивается по не-алфавитные символы и ищется не полное совпадение, а вхождение каждого из них.
+
+```bash
 GET module_placeholderdb_bizone_incidents.test_2026_11/_search
 {
   "query": {
-    "bool": {
-      "must": [
-        {"match": {"key":"INC-2045"}}
-      ]
+    "term": {
+      "key.keyword": "INC-2065"
     }
   }
 }
@@ -399,7 +420,11 @@ GET module_placeholderdb_bizone_incidents.test_2026_11/_search
     }
   }
 }
-# Поиск индексов по такому параметру как пустое поле affected_log_sources
+```
+
+Поиск индексов по такому параметру как пустое поле affected_log_sources
+
+```bash
 GET module_placeholderdb_bizone_incidents.test_2026_11/_search
 {
   "query": {
@@ -408,7 +433,11 @@ GET module_placeholderdb_bizone_incidents.test_2026_11/_search
     }
   }
 }
-# Удаление документов в индексе
+```
+
+Удаление документов в индексе
+
+```bash
 DELETE module_placeholderdb_bizone_incidents.test_2026_11/_doc/yhGIh6EBcfH0hhBlYO39
 POST module_placeholderdb_bizone_incidents.test_2026_11/_delete_by_query
 {
@@ -418,7 +447,11 @@ POST module_placeholderdb_bizone_incidents.test_2026_11/_delete_by_query
     }
   }
 }
-# Обновление документа в части информации о сенсорах
+```
+
+Обновление документа в части информации о сенсорах
+
+```bash
 POST module_placeholderdb_bizone_incidents.test_2026_11/_update/2xGIh6EBcfH0hhBlde3x
 {
   "doc": {
@@ -434,9 +467,17 @@ POST module_placeholderdb_bizone_incidents.test_2026_11/_update/2xGIh6EBcfH0hhBl
     }
   }
 }
-# Получить документ по его _id
+```
+
+Получить документ по его \_id
+
+```bash
 GET module_placeholderdb_bizone_incidents.test_2026_11/_doc/4RGIh6EBcfH0hhBlde3x
-# Получить количество уникальных документов по ключу key
+```
+
+Получить количество уникальных документов по ключу key
+
+```bash
 GET module_placeholderdb_bizone_incidents.test_2026_11/_search
 {
   "size": 0,
@@ -447,6 +488,17 @@ GET module_placeholderdb_bizone_incidents.test_2026_11/_search
         "size": 1000
       }
     }
+  }
+}
+```
+
+Удалить все документы из индекса
+
+```bash
+POST /module_placeholderdb_bizone_incidents.test_2026_11/_delete_by_query
+{
+  "query": {
+    "match_all": {}
   }
 }
 ```
