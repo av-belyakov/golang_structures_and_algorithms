@@ -435,15 +435,15 @@ GET module_placeholderdb_bizone_incidents.test_2026_11/_search
 }
 ```
 
-Удаление документов в индексе
+Удаление документов в индексе. При удалении документов методом POST надо руководствоватся тем же принципом что и по поиску документов, то есть использовать поле _\*.keyword_ и конструкцию _term_ в запросе.
 
 ```bash
 DELETE module_placeholderdb_bizone_incidents.test_2026_11/_doc/yhGIh6EBcfH0hhBlYO39
 POST module_placeholderdb_bizone_incidents.test_2026_11/_delete_by_query
 {
   "query": {
-    "match": {
-      "key": "INC-2045"
+    "term": {
+      "key.keyword": "INC-2065"
     }
   }
 }
